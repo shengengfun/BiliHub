@@ -1,8 +1,8 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import { fetchPopular, fetchRanking, formatCount, formatDuration, mediaUrl } from '../bili.js'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { fetchHotWords, fetchPopular, fetchRanking, formatCount, formatDuration, formatShort, mediaUrl } from '../bili.js'
 import { brand } from '../brand.js'
-import { topIcons } from '../mock.js'
+import { fallbackHotWords, topIcons } from '../mock.js'
 import { user, login, refreshUser, authSupported, startUserSync } from '../user.js'
 
 const emit = defineEmits(['play'])
@@ -27,6 +27,23 @@ const keyword = ref('')
 const videos = ref([])
 const loading = ref(true)
 const error = ref('')
+
+// 搜索框占位词：原包轮播实时热搜词
+const hotWords = ref([...fallbackHotWords])
+const hotIndex = ref(0)
+let hotTimer = null
+
+async function loadHotWords() {
+  try {
+    const list = await fetchHotWords()
+    if (list.length) {
+      hotWords.value = list
+      hotIndex.value = 0
+    }
+  } catch {
+    /* 取不到就沿用兜底文案 */
+  }
+}
 
 async function load(tab) {
   loading.value = true
@@ -70,7 +87,12 @@ onMounted(() => {
   load(activeTab.value)
   refreshUser()
   startUserSync()
+  loadHotWords()
+  hotTimer = window.setInterval(() => {
+    hotIndex.value = (hotIndex.value + 1) % hotWords.value.length
+  }, 4000)
 })
+onBeforeUnmount(() => window.clearInterval(hotTimer))
 watch(activeTab, (tab) => load(tab))
 </script>
 
@@ -85,7 +107,7 @@ watch(activeTab, (tab) => load(tab))
     </button>
     <label class="rp-search">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5 21 21" stroke-linecap="round" /></svg>
-      <input v-model="keyword" placeholder="搜索视频、UP主" @keyup.enter="search" />
+      <input v-model="keyword" :placeholder="hotWords[hotIndex]" @keyup.enter="search" />
     </label>
     <nav class="rp-tabs">
       <button v-for="tab in navTabs" :key="tab" :class="{ on: activeTab === tab }" @click="activeTab = tab">{{ tab }}</button>
@@ -117,7 +139,7 @@ watch(activeTab, (tab) => load(tab))
         <div class="rp-card-body">
           <h3 class="rp-title">{{ item.title }}</h3>
           <div class="rp-card-foot">
-            <span v-if="item.like >= 1000" class="rp-like">{{ formatCount(item.like) }}点赞</span>
+            <span v-if="item.like >= 1000" class="rp-like">{{ formatShort(item.like) }}点赞</span>
             <span class="up">
               <span class="rp-up-badge">UP</span>
               <span>{{ item.owner }}</span>

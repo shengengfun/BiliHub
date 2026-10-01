@@ -1,4 +1,15 @@
-export type ModuleCategory = 'video' | 'live' | 'style' | 'utility' | 'ambient' | 'danmaku' | 'ui'
+export type ModuleCategory =
+  | 'video'
+  | 'live'
+  | 'style'
+  | 'utility'
+  | 'ambient'
+  | 'danmaku'
+  | 'ui'
+  | 'appearance'
+  | 'enhance'
+  | 'player'
+  | 'download'
 
 export interface ComponentModule {
   id: string
@@ -11,7 +22,7 @@ export interface ComponentModule {
 
 export interface SettingSchema {
   key: string
-  type: 'boolean' | 'number' | 'string' | 'select' | 'color' | 'range'
+  type: 'boolean' | 'number' | 'string' | 'text' | 'select' | 'color' | 'range'
   default: unknown
   label: string
   description?: string

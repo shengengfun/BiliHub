@@ -3,25 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.cjs",
+  "description": "面向 Windows 的第三方哔哩哔哩客户端，以真实 B 站页面为承载，通过模块与插件扩展能力",
   "scripts": {
     "dev": "vite",
     "dev:electron": "electron electron/main.cjs",
+    "dev:ui": "pnpm --filter @bilihub/ui dev",
     "build": "vite build",
     "build:packages": "pnpm --filter @bilihub/shared build && pnpm --filter @bilihub/modules build && pnpm --filter @bilihub/runtime build",
-    "build:electron": "vite build && electron-builder --dir",
+    "build:ui": "pnpm --filter @bilihub/ui build",
+    "build:all": "pnpm build:packages && pnpm build:ui",
+    "registry": "node tools/gen-registry.mjs",
     "preview": "vite preview",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "dist": "pnpm build:all && electron-builder --win --publish never",
+    "dist:dir": "pnpm build:all && electron-builder --win --dir",
+    "sign:vmp": "node scripts/sign-vmp.mjs",
+    "release": "pnpm dist && pnpm sign:vmp"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
+    "electron-updater": "^6.3.9",
     "vite": "^6.1.0",
-    "vue": "^3.5.13",
-    "electron": "^33.2.1"
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "wait-on": "^8.0.1"
-  },
-  "main": "electron/main.cjs"
+  }
 }

@@ -1,150 +1,283 @@
 {
-  "version": 1,
+  "version": 2,
+  "generatedAt": "2026-10-01T04:37:24.153Z",
   "modules": [
     {
-      "id": "ad-block",
-      "name": "广告拦截",
-      "category": "utility",
-      "version": "0.1.0",
-      "description": "清理首页广告卡片和页面广告占位",
-      "settings": [{ "key": "enabled", "type": "boolean", "default": true, "label": "启用广告拦截" }]
-    },
-    {
       "id": "ambient-light",
-      "name": "AmbientLight",
-      "category": "ambient",
-      "version": "0.1.0",
-      "description": "从视频画面边缘采样并生成沉浸式背景光",
+      "name": "氛围光",
+      "category": "appearance",
+      "version": "1.0.0",
+      "description": "把视频画面边缘颜色扩散成页面背景，营造沉浸式观感",
       "settings": [
-        { "key": "enabled", "type": "boolean", "default": true, "label": "启用氛围光" },
-        { "key": "fps", "type": "number", "default": 15, "label": "采样频率", "min": 1, "max": 30, "step": 1 }
+        {
+          "key": "fps",
+          "type": "number",
+          "default": 15,
+          "min": 1,
+          "max": 30,
+          "label": "采样帧率"
+        },
+        {
+          "key": "blur",
+          "type": "number",
+          "default": 80,
+          "min": 20,
+          "max": 200,
+          "label": "模糊半径（px）"
+        },
+        {
+          "key": "opacity",
+          "type": "range",
+          "default": 0.85,
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "label": "强度"
+        },
+        {
+          "key": "saturate",
+          "type": "range",
+          "default": 1.6,
+          "min": 1,
+          "max": 3,
+          "step": 0.1,
+          "label": "饱和度"
+        },
+        {
+          "key": "fillPage",
+          "type": "boolean",
+          "default": true,
+          "label": "铺满整个页面（关闭则只做播放器底衬）"
+        }
       ]
     },
     {
       "id": "dark-mode",
       "name": "夜间模式",
-      "category": "style",
-      "version": "0.1.0",
-      "description": "降低页面亮度并减少夜间观看刺激",
+      "category": "appearance",
+      "version": "1.0.0",
+      "description": "为页面套用深色配色，可手动开关或按时间自动切换",
       "settings": [
         {
-          "key": "mode",
-          "type": "select",
-          "default": "auto",
-          "label": "模式",
-          "options": [
-            { "label": "跟随系统", "value": "auto" },
-            { "label": "始终开启", "value": "on" },
-            { "label": "关闭", "value": "off" }
-          ]
+          "key": "auto",
+          "type": "boolean",
+          "default": false,
+          "label": "按时间自动切换"
+        },
+        {
+          "key": "startHour",
+          "type": "number",
+          "default": 19,
+          "min": 0,
+          "max": 23,
+          "label": "进入夜间的小时"
+        },
+        {
+          "key": "endHour",
+          "type": "number",
+          "default": 7,
+          "min": 0,
+          "max": 23,
+          "label": "退出夜间的小时"
+        },
+        {
+          "key": "dimImages",
+          "type": "boolean",
+          "default": false,
+          "label": "同时压暗图片亮度"
         }
       ]
     },
     {
       "id": "custom-navbar",
       "name": "自定义顶栏",
-      "category": "ui",
-      "version": "0.1.0",
-      "description": "将 BiliHub 工具入口固定到 B 站顶栏",
-      "settings": [{ "key": "compact", "type": "boolean", "default": false, "label": "紧凑顶栏" }]
+      "category": "appearance",
+      "version": "1.0.0",
+      "description": "把网页版顶栏压成原包的单行形态，支持吸顶、毛玻璃与紧凑模式",
+      "settings": [
+        {
+          "key": "sticky",
+          "type": "boolean",
+          "default": true,
+          "label": "顶栏吸顶"
+        },
+        {
+          "key": "compact",
+          "type": "boolean",
+          "default": false,
+          "label": "紧凑模式（48px）"
+        },
+        {
+          "key": "transparent",
+          "type": "boolean",
+          "default": false,
+          "label": "毛玻璃半透明"
+        },
+        {
+          "key": "hideChannel",
+          "type": "boolean",
+          "default": false,
+          "label": "隐藏分区条"
+        },
+        {
+          "key": "hideBanner",
+          "type": "boolean",
+          "default": true,
+          "label": "隐藏首页大横幅"
+        }
+      ]
+    },
+    {
+      "id": "ad-block",
+      "name": "广告拦截",
+      "category": "enhance",
+      "version": "1.0.0",
+      "description": "按分类隐藏推荐流、横幅、直播、动态与播放器内的广告位，并持续清理动态插入的节点",
+      "settings": [
+        {
+          "key": "feed",
+          "type": "boolean",
+          "default": true,
+          "label": "推荐流广告"
+        },
+        {
+          "key": "banner",
+          "type": "boolean",
+          "default": true,
+          "label": "顶部横幅与活动楼层"
+        },
+        {
+          "key": "live",
+          "type": "boolean",
+          "default": true,
+          "label": "直播推荐与礼物特效"
+        },
+        {
+          "key": "dynamic",
+          "type": "boolean",
+          "default": true,
+          "label": "动态页广告"
+        },
+        {
+          "key": "player",
+          "type": "boolean",
+          "default": true,
+          "label": "播放器广告弹窗"
+        },
+        {
+          "key": "mall",
+          "type": "boolean",
+          "default": false,
+          "label": "会员购 / 大会员入口"
+        },
+        {
+          "key": "hideUpAd",
+          "type": "boolean",
+          "default": false,
+          "label": "隐藏 UP 主自己插入的恰饭卡片"
+        }
+      ]
     },
     {
       "id": "danmaku-enhance",
       "name": "弹幕优化",
       "category": "danmaku",
-      "version": "0.1.0",
-      "description": "优化弹幕透明度、字号和密度",
+      "version": "1.0.0",
+      "description": "屏蔽词过滤、重复弹幕合并，并统一下发透明度与字号",
       "settings": [
-        { "key": "opacity", "type": "range", "default": 0.86, "label": "弹幕透明度", "min": 0.2, "max": 1, "step": 0.05 },
-        { "key": "fontSize", "type": "number", "default": 24, "label": "弹幕字号", "min": 12, "max": 48 }
-      ]
-    },
-    {
-      "id": "danmaku-tools",
-      "name": "弹幕工具",
-      "category": "danmaku",
-      "version": "0.1.0",
-      "description": "发送弹幕并查询弹幕发送人信息",
-      "settings": [
-        { "key": "showSenderHash", "type": "boolean", "default": false, "label": "显示发送人标识" },
         {
-          "key": "sendMode",
-          "type": "select",
-          "default": "bottom",
-          "label": "发送位置",
-          "options": [
-            { "label": "滚动", "value": "scroll" },
-            { "label": "底部", "value": "bottom" },
-            { "label": "顶部", "value": "top" }
-          ]
+          "key": "blockWords",
+          "type": "text",
+          "default": "",
+          "label": "屏蔽词（逗号分隔，/xx/ 视为正则）"
+        },
+        {
+          "key": "blockSame",
+          "type": "boolean",
+          "default": false,
+          "label": "屏蔽重复弹幕"
+        },
+        {
+          "key": "opacity",
+          "type": "range",
+          "default": 1,
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "label": "不透明度"
+        },
+        {
+          "key": "fontScale",
+          "type": "range",
+          "default": 1,
+          "min": 0.6,
+          "max": 2,
+          "step": 0.05,
+          "label": "字号缩放"
+        },
+        {
+          "key": "hideBottom",
+          "type": "boolean",
+          "default": false,
+          "label": "屏蔽底部弹幕"
+        },
+        {
+          "key": "hideTop",
+          "type": "boolean",
+          "default": false,
+          "label": "屏蔽顶部弹幕"
+        },
+        {
+          "key": "blockLevel",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 6,
+          "label": "屏蔽低于该等级的发送者（0 为不限制）"
         }
       ]
     },
     {
       "id": "comments-enhance",
-      "name": "评论增强",
-      "category": "ui",
-      "version": "0.1.0",
-      "description": "折叠过长评论并突出高质量回复",
-      "settings": [{ "key": "collapseLong", "type": "boolean", "default": true, "label": "折叠长评论" }]
-    },
-    {
-      "id": "download",
-      "name": "下载管理",
-      "category": "video",
-      "version": "0.1.0",
-      "description": "下载视频、封面、弹幕与元数据",
+      "name": "评论区增强",
+      "category": "enhance",
+      "version": "1.0.0",
+      "description": "屏蔽关键词评论、展开折叠内容、突出 IP 属地",
       "settings": [
         {
-          "key": "quality",
-          "type": "select",
-          "default": "1080p",
-          "label": "默认画质",
-          "options": [
-            { "label": "1080P", "value": "1080p" },
-            { "label": "720P", "value": "720p" }
-          ]
+          "key": "blockWords",
+          "type": "text",
+          "default": "",
+          "label": "屏蔽关键词（逗号分隔）"
+        },
+        {
+          "key": "blockUsers",
+          "type": "text",
+          "default": "",
+          "label": "屏蔽用户名（逗号分隔）"
+        },
+        {
+          "key": "highlightLocation",
+          "type": "boolean",
+          "default": true,
+          "label": "突出显示 IP 属地"
+        },
+        {
+          "key": "wide",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 400,
+          "label": "评论区加宽（px，0 为不调整）"
         }
-      ]
-    },
-    {
-      "id": "live-enhance",
-      "name": "直播增强",
-      "category": "live",
-      "version": "0.1.0",
-      "description": "清理直播礼物特效、侧栏和重复提醒",
-      "settings": [
-        { "key": "hideGiftEffects", "type": "boolean", "default": true, "label": "隐藏礼物特效" },
-        { "key": "hideSidebar", "type": "boolean", "default": false, "label": "隐藏直播侧栏" }
-      ]
-    },
-    {
-      "id": "screenshot",
-      "name": "截图",
-      "category": "video",
-      "version": "0.1.0",
-      "description": "截取当前视频画面并保存",
-      "settings": [{ "key": "includeDanmaku", "type": "boolean", "default": false, "label": "包含弹幕" }]
-    },
-    {
-      "id": "shortcuts",
-      "name": "快捷键",
-      "category": "utility",
-      "version": "0.1.0",
-      "description": "用键盘控制弹幕、截图、下载与氛围光",
-      "settings": [
-        { "key": "toggleDanmaku", "type": "string", "default": "D", "label": "开关弹幕" },
-        { "key": "screenshot", "type": "string", "default": "Shift+S", "label": "截图" },
-        { "key": "download", "type": "string", "default": "Alt+D", "label": "下载" },
-        { "key": "toggleAmbient", "type": "string", "default": "A", "label": "氛围光" }
       ]
     },
     {
       "id": "sponsor-skip",
       "name": "自动跳过 UP 主广告",
       "category": "utility",
-      "version": "0.1.0",
-      "description": "识别弹幕中的推广时间点并提供手动跳过",
+      "version": "1.0.0",
+      "description": "优先读取 SponsorBlock 社区标记，无数据时分析弹幕空降时间点，提供手动/自动跳过",
       "settings": [
         {
           "key": "mode",
@@ -152,19 +285,330 @@
           "default": "manual",
           "label": "跳过模式",
           "options": [
-            { "label": "手动确认", "value": "manual" },
-            { "label": "自动跳过", "value": "auto" }
+            {
+              "label": "手动确认",
+              "value": "manual"
+            },
+            {
+              "label": "自动跳过",
+              "value": "auto"
+            }
           ]
+        },
+        {
+          "key": "minWeight",
+          "type": "number",
+          "default": 4,
+          "min": 1,
+          "max": 20,
+          "label": "弹幕聚类权重阈值"
+        },
+        {
+          "key": "showSource",
+          "type": "boolean",
+          "default": true,
+          "label": "按钮上显示数据来源"
+        }
+      ]
+    },
+    {
+      "id": "download",
+      "name": "视频下载",
+      "category": "download",
+      "version": "1.0.0",
+      "description": "一键下载当前视频、封面、弹幕与元数据，支持清晰度选择与断点续传",
+      "settings": [
+        {
+          "key": "quality",
+          "type": "select",
+          "default": "80",
+          "label": "默认清晰度",
+          "options": [
+            {
+              "label": "1080P",
+              "value": "80"
+            },
+            {
+              "label": "720P",
+              "value": "64"
+            },
+            {
+              "label": "480P",
+              "value": "32"
+            },
+            {
+              "label": "360P",
+              "value": "16"
+            }
+          ]
+        },
+        {
+          "key": "autoDanmaku",
+          "type": "boolean",
+          "default": true,
+          "label": "同时保存弹幕"
+        },
+        {
+          "key": "autoMeta",
+          "type": "boolean",
+          "default": true,
+          "label": "同时保存元数据"
+        },
+        {
+          "key": "button",
+          "type": "boolean",
+          "default": true,
+          "label": "在播放页显示下载按钮"
+        }
+      ]
+    },
+    {
+      "id": "danmaku-tools",
+      "name": "弹幕工具",
+      "category": "danmaku",
+      "version": "1.0.0",
+      "description": "在播放页直接发送弹幕，并可反查弹幕发送者（基于本地 UID 哈希索引）",
+      "settings": [
+        {
+          "key": "enableSend",
+          "type": "boolean",
+          "default": true,
+          "label": "显示弹幕发送框"
+        },
+        {
+          "key": "enableLookup",
+          "type": "boolean",
+          "default": true,
+          "label": "启用发送人查询"
+        },
+        {
+          "key": "defaultColor",
+          "type": "text",
+          "default": "#ffffff",
+          "label": "默认弹幕颜色"
+        },
+        {
+          "key": "defaultMode",
+          "type": "select",
+          "default": "1",
+          "label": "默认弹幕类型",
+          "options": [
+            {
+              "label": "滚动",
+              "value": "1"
+            },
+            {
+              "label": "底部",
+              "value": "4"
+            },
+            {
+              "label": "顶部",
+              "value": "5"
+            }
+          ]
+        },
+        {
+          "key": "collectUsers",
+          "type": "boolean",
+          "default": true,
+          "label": "自动从评论区采集 UID 用于反查"
+        }
+      ]
+    },
+    {
+      "id": "shortcuts",
+      "name": "快捷键",
+      "category": "utility",
+      "version": "1.0.0",
+      "description": "播放/暂停、快进后退、音量、倍速、全屏、弹幕开关等键盘快捷操作",
+      "settings": [
+        {
+          "key": "seekStep",
+          "type": "number",
+          "default": 5,
+          "min": 1,
+          "max": 30,
+          "label": "快进/后退步长（秒）"
+        },
+        {
+          "key": "volumeStep",
+          "type": "range",
+          "default": 0.05,
+          "min": 0.01,
+          "max": 0.2,
+          "step": 0.01,
+          "label": "音量步长"
+        },
+        {
+          "key": "rateStep",
+          "type": "range",
+          "default": 0.25,
+          "min": 0.05,
+          "max": 1,
+          "step": 0.05,
+          "label": "倍速步长"
+        },
+        {
+          "key": "enableSeek",
+          "type": "boolean",
+          "default": true,
+          "label": "方向键快进/后退"
+        },
+        {
+          "key": "enableVolume",
+          "type": "boolean",
+          "default": true,
+          "label": "上下键调节音量"
+        },
+        {
+          "key": "enableRate",
+          "type": "boolean",
+          "default": true,
+          "label": "Shift+左右 调节倍速"
+        },
+        {
+          "key": "enableScreenshot",
+          "type": "boolean",
+          "default": false,
+          "label": "接管 Alt+S（由截图模块处理）"
         }
       ]
     },
     {
       "id": "video-tools",
-      "name": "视频工具",
-      "category": "video",
-      "version": "0.1.0",
-      "description": "截图、画中画和视频画面增强",
-      "settings": [{ "key": "includeDanmaku", "type": "boolean", "default": false, "label": "截图包含弹幕" }]
+      "name": "播放增强",
+      "category": "player",
+      "version": "1.0.0",
+      "description": "倍速记忆、音量增益、画中画与逐帧步进",
+      "settings": [
+        {
+          "key": "rememberRate",
+          "type": "boolean",
+          "default": true,
+          "label": "记住上次播放倍速"
+        },
+        {
+          "key": "defaultRate",
+          "type": "range",
+          "default": 1,
+          "min": 0.25,
+          "max": 3,
+          "step": 0.05,
+          "label": "默认倍速"
+        },
+        {
+          "key": "volumeBoost",
+          "type": "range",
+          "default": 1,
+          "min": 0.5,
+          "max": 4,
+          "step": 0.1,
+          "label": "音量增益倍数"
+        },
+        {
+          "key": "pipButton",
+          "type": "boolean",
+          "default": true,
+          "label": "显示画中画按钮"
+        },
+        {
+          "key": "frameStep",
+          "type": "boolean",
+          "default": true,
+          "label": "启用逐帧步进（, 与 .）"
+        }
+      ]
+    },
+    {
+      "id": "live-enhance",
+      "name": "直播优化",
+      "category": "enhance",
+      "version": "1.0.0",
+      "description": "关闭礼物特效与动画、自动选择最高画质、播放期间阻止系统休眠",
+      "settings": [
+        {
+          "key": "blockGift",
+          "type": "boolean",
+          "default": true,
+          "label": "屏蔽礼物特效"
+        },
+        {
+          "key": "blockAnimation",
+          "type": "boolean",
+          "default": true,
+          "label": "屏蔽进场/横幅动画"
+        },
+        {
+          "key": "autoQuality",
+          "type": "boolean",
+          "default": true,
+          "label": "自动切到最高画质"
+        },
+        {
+          "key": "keepAwake",
+          "type": "boolean",
+          "default": true,
+          "label": "播放时阻止休眠"
+        },
+        {
+          "key": "wideDanmaku",
+          "type": "boolean",
+          "default": false,
+          "label": "加宽弹幕区"
+        }
+      ]
+    },
+    {
+      "id": "screenshot",
+      "name": "截图",
+      "category": "utility",
+      "version": "1.0.0",
+      "description": "抓取当前视频帧或整个窗口并保存到本地",
+      "settings": [
+        {
+          "key": "withDanmaku",
+          "type": "boolean",
+          "default": true,
+          "label": "截图包含弹幕"
+        },
+        {
+          "key": "format",
+          "type": "select",
+          "default": "png",
+          "label": "图片格式",
+          "options": [
+            {
+              "label": "PNG",
+              "value": "png"
+            },
+            {
+              "label": "JPEG",
+              "value": "jpeg"
+            }
+          ]
+        },
+        {
+          "key": "quality",
+          "type": "range",
+          "default": 0.92,
+          "min": 0.5,
+          "max": 1,
+          "step": 0.02,
+          "label": "JPEG 质量"
+        },
+        {
+          "key": "shortcut",
+          "type": "boolean",
+          "default": true,
+          "label": "启用 Alt+S 快捷键"
+        },
+        {
+          "key": "floatingButton",
+          "type": "boolean",
+          "default": true,
+          "label": "显示悬浮截图按钮"
+        }
+      ]
     }
   ]
 }

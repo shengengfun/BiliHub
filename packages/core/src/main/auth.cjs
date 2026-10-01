@@ -138,4 +138,10 @@ async function diagnose() {
   return { cookieCount: cookies.length, hasSESSDATA: names.includes('SESSDATA'), cookieNames: names, nav, error }
 }
 
-module.exports = { getStatus, openLogin, logout, diagnose, biliSession, UA }
+/** 读取 bili_jct（CSRF token），写操作接口必须携带 */
+async function csrfToken() {
+  const cookies = await biliSession().cookies.get({ domain: 'bilibili.com', name: 'bili_jct' })
+  return cookies[0]?.value ?? ''
+}
+
+module.exports = { getStatus, openLogin, logout, diagnose, biliSession, cookieHeader, csrfToken, UA }

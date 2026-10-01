@@ -26,6 +26,15 @@ function createUiWindow() {
   if (fs.existsSync(distIndex)) window.loadFile(distIndex)
   else window.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent('<h2 style="font-family:sans-serif">面板未构建，请先运行 pnpm --filter @bilihub/ui build</h2>'))
 
+  // 面板崩溃时自动恢复，保持可用
+  window.webContents.on('render-process-gone', (_event, details) => {
+    if (details.reason === 'clean-exit') return
+    console.error('[bilihub:ui] 面板进程退出', details.reason)
+    setTimeout(() => {
+      if (!window.isDestroyed() && fs.existsSync(distIndex)) window.loadFile(distIndex)
+    }, 800)
+  })
+
   return {
     show() { if (window.isMinimized()) window.restore(); window.show(); window.focus() },
     hide() { window.hide() },

@@ -19,7 +19,9 @@ function listModules(storage) {
     version: module.version,
     description: module.description,
     settings: module.settings ?? [],
-  })).map((module) => ({ ...module, settings: module.settings }))
+    // 启用状态优先取用户设置，其次取注册表默认值，缺省为启用
+    enabled: storage?.get?.(`module:${module.id}:enabled`) ?? module.enabled ?? true,
+  }))
 }
 
 function getModuleSettings(storage, moduleId) {

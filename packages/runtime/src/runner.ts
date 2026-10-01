@@ -1,4 +1,4 @@
-import type { RuntimeModule, RuntimeContext, RuntimeStorage } from './types.js'
+import type { RuntimeAdapter, RuntimeModule, RuntimeContext, RuntimeStorage } from './types.js'
 
 export function sortModules(modules: RuntimeModule[]): RuntimeModule[] {
   const byId = new Map(modules.map((module) => [module.id, module]))
@@ -22,12 +22,17 @@ export function sortModules(modules: RuntimeModule[]): RuntimeModule[] {
   return ordered
 }
 
-export async function runModules(modules: RuntimeModule[], storage: RuntimeStorage, log: RuntimeContext['log'] = console) {
+export async function runModules(modules: RuntimeModule[], adapter: RuntimeAdapter, storage: RuntimeStorage, log: RuntimeContext['log'] = console) {
   const loaded: RuntimeModule[] = []
   for (const module of sortModules(modules)) {
+    // 模块总开关：module:<id>:enabled，未设置时视为启用
+    const enabled = (await storage.get(`module:${module.id}:enabled`)) ?? true
+    if (enabled === false) continue
+
     const settings: Record<string, unknown> = {}
     for (const schema of module.settings) settings[schema.key] = (await storage.get(`module:${module.id}:${schema.key}`)) ?? schema.default
     const context: RuntimeContext = {
+      adapter,
       settings,
       getSetting: <T>(key: string) => settings[key] as T,
       setSetting: async (key, value) => { settings[key] = value; await storage.set(`module:${module.id}:${key}`, value) },

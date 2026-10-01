@@ -62,6 +62,14 @@ export const mineMenus = [
     ],
   },
   {
+    group: '扩展',
+    items: [
+      { label: '插件', icon: 'ic-plugin.svg' },
+      { label: '功能模块', icon: 'ic-module.svg' },
+      { label: '下载管理', icon: 'ic-mine-offline' },
+    ],
+  },
+  {
     group: '更多服务',
     items: [
       { label: '青少年模式', icon: 'ic-mine-theme' },
@@ -90,11 +98,18 @@ export const chatList = [
   { name: '社区中心', desc: '', time: '09-20', tone: 6 },
 ]
 
+// 分组按截图实测：组间用 10px 灰底分隔，组内行间为 1px 发丝线
 export const settingsItems = [
-  ['账号资料', '安全隐私', '播放设置', '离线设置'],
-  ['推送设置', '消息设置', '深色设置', '清理存储空间'],
-  ['其他设置', '我的客服', '用户协议'],
+  ['账号资料', '安全隐私'],
+  ['播放设置', '离线设置'],
+  ['推送设置', '消息设置'],
+  ['深色设置'],
+  ['清空存储空间', '其他设置'],
+  ['我的客服', '用户协议'],
 ]
+
+// 首页搜索框的占位词：原包显示的是实时热搜词，取不到时回退到通用提示
+export const fallbackHotWords = ['搜索视频、UP主', '热门番剧', '游戏实况', '学习充电']
 
 export const playerInfo = {
   up: '小鸡不好惹ooo', fans: '20.3万粉丝', videos: '60视频',

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-01T00:00:00.000Z",
+  "note": "官方插件索引。客户端只读取 name/version/description/permissions 等元数据，插件本体需要用户自行放入 plugins 目录。",
+  "plugins": [
+    {
+      "id": "com.bilihub.example.hello",
+      "name": "示例插件",
+      "version": "1.0.0",
+      "author": "BiliHub",
+      "repository": "https://github.com/shengengfun/BiliHub/tree/main/plugins/example-hello",
+      "description": "演示插件沙箱：只申请 storage / ui.page / notify 三项权限，在页面上挂一块可关闭的面板。",
+      "permissions": ["storage", "ui.page", "notify"],
+      "homepage": "https://github.com/shengengfun/BiliHub"
+    },
+    {
+      "id": "com.bilihub.danmaku-filter",
+      "name": "弹幕关键词过滤",
+      "version": "0.1.0",
+      "author": "社区",
+      "description": "按自定义关键词与正则屏蔽弹幕，支持导入导出词库。",
+      "permissions": ["storage", "danmaku.read"],
+      "homepage": "",
+      "unlisted": true
+    },
+    {
+      "id": "com.bilihub.timeline-note",
+      "name": "时间轴笔记",
+      "version": "0.1.0",
+      "author": "社区",
+      "description": "在视频时间轴上记录笔记，点击可跳转回对应进度。",
+      "permissions": ["storage", "player", "ui.page"],
+      "homepage": "",
+      "unlisted": true
+    }
+  ]
+}

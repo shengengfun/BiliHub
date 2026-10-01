@@ -1,0 +1,51 @@
+appId: com.bilihub.app
+productName: BiliHub
+copyright: Copyright © 2026 BiliHub Contributors
+
+directories:
+  output: release
+  buildResources: build
+
+# 只打包运行期必需的文件：入口、core 主进程、UI 产物、运行时与模块产物、
+# 注册表与示例插件。源码与逆向分析产物不进入安装包。
+files:
+  - electron/**/*
+  - packages/core/src/**/*
+  - packages/ui/dist/**/*
+  - packages/runtime/dist/**/*
+  - packages/modules/dist/**/*
+  - packages/shared/dist/**/*
+  - registry/**/*
+  - plugins/**/*
+  - package.json
+  - '!**/*.map'
+  - '!**/node_modules/.cache'
+
+extraMetadata:
+  main: electron/main.cjs
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build/icon.ico
+  # Widevine 需要 castlabs 构建 + EVS VMP 签名（code signing → VMP，顺序不可颠倒）
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: ${productName}-${version}-setup.${ext}
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+
+publish:
+  provider: github
+  owner: shengengfun
+  repo: BiliHub

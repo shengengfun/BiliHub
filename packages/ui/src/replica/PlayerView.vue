@@ -1,6 +1,22 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fetchDanmakuXml, fetchPlayUrl, fetchPopular, fetchVideo, formatCount, formatDate, formatDuration, mediaUrl } from '../bili.js'
+import {
+  fetchComments,
+  fetchDanmakuXml,
+  fetchPlayUrl,
+  fetchRelated,
+  fetchVideo,
+  formatCount,
+  formatDate,
+  formatDuration,
+  formatRelative,
+  lookupDanmakuSender,
+  mediaUrl,
+  qualityLabel,
+  sendDanmaku,
+} from '../bili.js'
+import { api } from '../api.js'
+import { user } from '../user.js'
 import { brand } from '../brand.js'
 
 const props = defineProps({ bvid: { type: String, required: true } })
@@ -22,6 +38,30 @@ const duration = ref(0)
 const fullscreen = ref(false)
 const showControls = ref(true)
 const showDanmakuPanel = ref(false)
+
+// 播放选项
+const playInfo = ref(null)
+const quality = ref(0)
+const qualityOptions = ref([])
+const rate = ref(1)
+const volume = ref(0.8)
+const muted = ref(false)
+const showQuality = ref(false)
+const showRate = ref(false)
+const busy = ref('')
+const toast = ref('')
+let toastTimer = null
+let pendingSeek = 0
+
+// 弹幕发送 / 发送人查询
+const danmakuText = ref('')
+const danmakuColor = ref('#ffffff')
+const danmakuMode = ref(1)
+const sendingDanmaku = ref(false)
+const senderInfo = ref(null)
+
+// 评论区
+const comments = ref({ items: [], total: 0, loading: false, error: '' })
 
 // 弹幕设置：项名与默认值对齐原包播放器设置面板
 const dm = ref({
@@ -97,28 +137,212 @@ async function load(bvid) {
   error.value = ''
   playUrl.value = ''
   detail.value = null
+  playInfo.value = null
+  qualityOptions.value = []
   danmakuList.value = []
   activeDanmaku.value = []
+  comments.value = { items: [], total: 0, loading: false, error: '' }
+  senderInfo.value = null
   pointer = 0
   lastTime = 0
+  pendingSeek = 0
   seenContent.clear()
   rowBusy.fill(0)
 
   try {
     const info = await fetchVideo(bvid)
     detail.value = info
-    const play = await fetchPlayUrl(bvid, info.cid, 0)
-    const direct = play.kind === 'durl' ? play.urls[0] : (play.videos?.[0]?.url ?? '')
-    if (!direct) throw new Error('没有可用的播放地址')
-    playUrl.value = mediaUrl(direct)
-    fetchPopular(10).then((list) => { recommends.value = list.filter((item) => item.bvid !== bvid).slice(0, 6) }).catch(() => {})
-    fetchDanmakuXml(info.cid).then((list) => { danmakuList.value = list }).catch(() => {})
+    await loadStream(0, true)
+    // 相关推荐：需登录的接口拿不到时保留上一次结果
+    fetchRelated(bvid)
+      .then((list) => { if (list.length) recommends.value = list.slice(0, 8) })
+      .catch(() => {})
+    fetchDanmakuXml(info.cid)
+      .then((list) => { danmakuList.value = list })
+      .catch(() => {})
   } catch (e) {
     error.value = `播放失败：${e.message}`
   } finally {
     loading.value = false
   }
 }
+
+/** 拉取播放地址；qn 为 0 时用默认清晰度。切换清晰度会尽量保持当前进度 */
+async function loadStream(qn = 0, reset = false) {
+  const info = detail.value
+  if (!info) return
+  busy.value = 'stream'
+  const keep = reset ? 0 : (videoEl.value?.currentTime ?? 0)
+  try {
+    const play = await fetchPlayUrl(props.bvid, info.cid, { qn: qn || 80, fnval: 0 })
+    const direct = play.kind === 'durl' ? play.urls[0] : (play.videos?.[0]?.url ?? '')
+    if (!direct) throw new Error('没有可用的播放地址')
+    playInfo.value = play
+    quality.value = play.quality ?? 0
+    qualityOptions.value = play.formats ?? []
+    playUrl.value = mediaUrl(direct)
+    pendingSeek = keep
+  } catch (e) {
+    error.value = `播放失败：${e.message}`
+  } finally {
+    busy.value = ''
+  }
+}
+
+function showToast(text) {
+  toast.value = text
+  window.clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => { toast.value = '' }, 2400)
+}
+
+async function switchQuality(option) {
+  showQuality.value = false
+  if (option.quality === quality.value) return
+  await loadStream(option.quality)
+  showToast(`已切换到 ${option.label || qualityLabel(option.quality)}`)
+}
+
+function setRate(value) {
+  rate.value = value
+  if (videoEl.value) videoEl.value.playbackRate = value
+  showRate.value = false
+}
+
+function onVolume(value) {
+  volume.value = Number(value)
+  if (videoEl.value) {
+    videoEl.value.volume = volume.value
+    videoEl.value.muted = volume.value === 0
+  }
+  muted.value = volume.value === 0
+}
+
+function toggleMute() {
+  const el = videoEl.value
+  if (!el) return
+  el.muted = !el.muted
+  muted.value = el.muted
+}
+
+/** 画中画 */
+async function togglePip() {
+  const el = videoEl.value
+  if (!el) return
+  try {
+    if (document.pictureInPictureElement) await document.exitPictureInPicture()
+    else await el.requestPictureInPicture()
+  } catch (e) {
+    showToast(`画中画不可用：${e.message}`)
+  }
+}
+
+/** 截取当前帧并保存 */
+async function snapshot() {
+  const el = videoEl.value
+  if (!el || !el.videoWidth) return showToast('画面尚未就绪')
+  const canvas = document.createElement('canvas')
+  canvas.width = el.videoWidth
+  canvas.height = el.videoHeight
+  const context = canvas.getContext('2d')
+  context.drawImage(el, 0, 0, canvas.width, canvas.height)
+  const dataUrl = canvas.toDataURL('image/png')
+  const ok = await api.saveData({ dataUrl, filename: `bilihub-${props.bvid}-${Math.floor(el.currentTime)}s.png` })
+  showToast(ok ? '已保存截图' : '已取消保存')
+}
+
+// ---- 下载：视频 / 封面 / 弹幕 / 元数据 ----
+async function downloadVideo() {
+  const direct = playInfo.value?.kind === 'durl' ? playInfo.value.urls[0] : playInfo.value?.videos?.[0]?.url
+  if (!direct) return showToast('没有可下载的直链')
+  await api.createDownload({
+    type: 'video',
+    url: direct,
+    title: detail.value?.title,
+    filename: `${detail.value?.title || props.bvid}-${qualityLabel(quality.value)}.mp4`,
+    bvid: props.bvid,
+    cid: detail.value?.cid,
+  })
+  showToast('已加入下载队列')
+}
+
+async function downloadCover() {
+  if (!detail.value?.cover) return
+  await api.createDownload({ type: 'cover', url: detail.value.cover, title: `${detail.value.title}-封面`, filename: `${detail.value.title}-封面.jpg` })
+  showToast('封面已加入下载队列')
+}
+
+async function downloadDanmaku() {
+  if (!danmakuList.value.length) return showToast('弹幕尚未加载')
+  const lines = danmakuList.value.map((item) => `${item.time.toFixed(2)},${item.mode},${item.fontSize},${item.color},${item.timestamp},0,${item.senderHash},${item.id}:${item.content}`)
+  await api.createDownload({
+    type: 'danmaku',
+    url: `https://api.bilibili.com/x/v1/dm/list.so?oid=${detail.value?.cid}`,
+    title: `${detail.value?.title}-弹幕`,
+    filename: `${detail.value?.title}-弹幕.xml`,
+    content: `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n${lines.join('\n')}\n</i>\n`,
+  })
+  showToast('弹幕已保存')
+}
+
+async function downloadMetadata() {
+  if (!detail.value) return
+  await api.createDownload({
+    type: 'metadata',
+    url: `bilihub://metadata/${props.bvid}`,
+    title: `${detail.value.title}-信息`,
+    filename: `${detail.value.title}-info.json`,
+    content: JSON.stringify({ ...detail.value, quality: quality.value, formats: qualityOptions.value }, null, 2),
+  })
+  showToast('视频信息已保存')
+}
+
+// ---- 弹幕发送 ----
+async function submitDanmaku() {
+  const text = danmakuText.value.trim()
+  if (!text) return
+  if (!user.value?.isLogin) return showToast('请先登录后再发送弹幕')
+  const el = videoEl.value
+  sendingDanmaku.value = true
+  try {
+    await sendDanmaku({
+      bvid: props.bvid,
+      cid: detail.value.cid,
+      text,
+      mode: danmakuMode.value,
+      color: parseInt(danmakuColor.value.replace('#', ''), 16),
+      fontSize: 25,
+      progress: el?.currentTime ?? 0,
+    })
+    danmakuText.value = ''
+    showToast('弹幕已发送')
+  } catch (e) {
+    showToast(e.message)
+  } finally {
+    sendingDanmaku.value = false
+  }
+}
+
+/** 弹幕发送人查询 */
+async function querySender(item) {
+  if (!item?.hash) return
+  senderInfo.value = { loading: true, content: item.content, hash: item.hash }
+  const result = await lookupDanmakuSender({ cid: detail.value?.cid, danmaku: { senderHash: item.hash } })
+  senderInfo.value = { ...result, content: item.content }
+}
+
+// ---- 评论区 ----
+async function loadComments() {
+  if (!detail.value || comments.value.loading) return
+  comments.value = { ...comments.value, loading: true, error: '' }
+  try {
+    const page = await fetchComments({ bvid: props.bvid, cid: detail.value.cid })
+    comments.value = { items: page.items, total: page.total, loading: false, error: '' }
+  } catch (e) {
+    comments.value = { items: [], total: 0, loading: false, error: e.message }
+  }
+}
+
+watch(sideTab, (tab) => { if (tab === '评论' && !comments.value.items.length) loadComments() })
 
 /** 弹幕筛选：类型开关 + 屏蔽规则，对齐原包设置项 */
 function accept(item) {
@@ -172,6 +396,7 @@ function tick() {
       activeDanmaku.value.push({
         key: `${item.id}-${seq++}`,
         content: item.content,
+        hash: item.senderHash,
         color: item.color === 16777215 ? '#ffffff' : `#${item.color.toString(16).padStart(6, '0')}`,
         fixed: item.mode === 5 ? 'top' : item.mode === 4 ? 'bottom' : '',
         row: fixed ? 0 : allocateRow(),
@@ -188,7 +413,14 @@ function onLoadedMetadata() {
   const el = videoEl.value
   if (!el) return
   duration.value = el.duration || 0
-  el.volume = 0.8
+  el.volume = volume.value
+  el.muted = muted.value
+  el.playbackRate = rate.value
+  // 切换清晰度后恢复到原来的观看进度
+  if (pendingSeek > 0 && Number.isFinite(pendingSeek)) {
+    el.currentTime = Math.min(pendingSeek, Math.max(0, (el.duration || pendingSeek) - 0.5))
+    pendingSeek = 0
+  }
   activeDanmaku.value = []
   pointer = 0
   lastTime = 0
@@ -254,6 +486,7 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
               opacity: dm.opacity,
               animationDuration: `${item.duration}s`,
             }"
+            @click="querySender(item)"
           >{{ item.content }}</span>
         </div>
 
@@ -283,9 +516,44 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
             <button class="rp-ctl-icon" title="弹幕设置" @click="showDanmakuPanel = !showDanmakuPanel">
               <img :src="brand('dm-setting.png')" alt="弹幕设置" />
             </button>
+            <button class="rp-ctl-text" :title="'清晰度'" @click="showQuality = !showQuality; showRate = false">
+              {{ qualityLabel(quality, qualityOptions.find((item) => item.quality === quality)?.label) || '清晰度' }}
+            </button>
+            <button class="rp-ctl-text" :class="{ on: rate !== 1 }" title="倍速" @click="showRate = !showRate; showQuality = false">{{ rate }}x</button>
+            <button class="rp-ctl-icon" title="画中画" @click="togglePip">
+              <img :src="brand('player-pip.svg')" alt="画中画" />
+            </button>
+            <button class="rp-ctl-icon" title="截图" @click="snapshot">
+              <img :src="brand('player-shot.svg')" alt="截图" />
+            </button>
+            <button class="rp-ctl-icon" title="下载" @click="downloadVideo">
+              <img :src="brand('player-download.svg')" alt="下载" />
+            </button>
             <button class="rp-ctl-icon" title="全屏" @click="toggleFullscreen">
               <img :src="brand('player-right.svg')" alt="全屏" />
             </button>
+          </div>
+
+          <div v-if="showQuality" class="rp-ctl-menu" @click.stop>
+            <button v-for="option in qualityOptions" :key="option.quality" :class="{ on: option.quality === quality }" @click="switchQuality(option)">
+              {{ option.label || qualityLabel(option.quality) }}
+            </button>
+            <div v-if="!qualityOptions.length" class="rp-ctl-menu-empty">未获取到清晰度列表</div>
+          </div>
+
+          <div v-if="showRate" class="rp-ctl-menu rate" @click.stop>
+            <button v-for="value in [2, 1.5, 1.25, 1, 0.75, 0.5]" :key="value" :class="{ on: value === rate }" @click="setRate(value)">{{ value }}x</button>
+          </div>
+
+          <div class="rp-dm-input-bar" @click.stop>
+            <input v-model="danmakuText" type="text" maxlength="100" placeholder="发送弹幕，回车确认" @keydown.enter="submitDanmaku" />
+            <input v-model="danmakuColor" type="color" title="弹幕颜色" />
+            <select v-model.number="danmakuMode" title="弹幕类型">
+              <option :value="1">滚动</option>
+              <option :value="4">底部</option>
+              <option :value="5">顶部</option>
+            </select>
+            <button :disabled="sendingDanmaku || !danmakuText.trim()" @click="submitDanmaku">{{ sendingDanmaku ? '发送中' : '发送' }}</button>
           </div>
 
           <div v-if="showDanmakuPanel" class="rp-dm-panel" @click.stop>
@@ -361,14 +629,62 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
         </div>
         <div class="rp-player-actions">
           <div class="rp-action"><span class="ic">赞</span>{{ formatCount(detail.stat.like) }}</div>
-          <div class="rp-action"><span class="ic">踩</span>不喜欢</div>
           <div class="rp-action"><span class="ic">币</span>{{ formatCount(detail.stat.coin) }}</div>
           <div class="rp-action"><span class="ic">藏</span>{{ formatCount(detail.stat.favorite) }}</div>
           <div class="rp-action"><span class="ic">享</span>{{ formatCount(detail.stat.share) }}</div>
         </div>
+        <div class="rp-player-downloads">
+          <button :disabled="busy === 'stream'" @click="downloadVideo">下载视频</button>
+          <button @click="downloadCover">下载封面</button>
+          <button @click="downloadDanmaku">下载弹幕</button>
+          <button @click="downloadMetadata">导出信息</button>
+        </div>
         <div v-if="sideTab === '简介'" class="rp-desc">{{ detail.desc || '暂无简介' }}</div>
+        <div v-else-if="sideTab === '评论'" class="rp-comments">
+          <div v-if="comments.loading" class="rp-comments-tip">正在加载评论…</div>
+          <div v-else-if="comments.error" class="rp-comments-tip">
+            {{ comments.error }}
+            <button class="rp-comments-retry" @click="loadComments">重试</button>
+          </div>
+          <div v-else-if="!comments.items.length" class="rp-comments-tip">还没有评论</div>
+          <template v-else>
+            <div class="rp-comments-head">共 {{ formatCount(comments.total) }} 条评论</div>
+            <div v-for="item in comments.items" :key="item.rpid" class="rp-comment">
+              <img v-if="item.face" :src="mediaUrl(item.face)" :alt="item.user" loading="lazy" />
+              <div class="rp-comment-body">
+                <div class="rp-comment-who"><b>{{ item.user }}</b><span v-if="item.level">LV{{ item.level }}</span><em>{{ formatRelative(item.ctime) }}</em></div>
+                <p>{{ item.content }}</p>
+                <div class="rp-comment-meta"><span>赞 {{ item.like }}</span><span v-if="item.replyCount">回复 {{ item.replyCount }}</span><span v-if="item.location">{{ item.location }}</span></div>
+                <div v-for="sub in item.subReplies" :key="sub.rpid" class="rp-comment-sub">
+                  <b>{{ sub.user }}：</b>{{ sub.content }}
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
       </template>
       <div v-else class="rp-player-placeholder side">{{ loading ? '加载中…' : error }}</div>
+
+      <div v-if="senderInfo" class="rp-sender" @click="senderInfo = null">
+        <div class="rp-sender-card" @click.stop>
+          <div class="rp-sender-head">弹幕发送人</div>
+          <div class="rp-sender-content">「{{ senderInfo.content }}」</div>
+          <div v-if="senderInfo.loading" class="rp-sender-tip">查询中…</div>
+          <template v-else-if="senderInfo.resolved">
+            <div class="rp-sender-user">
+              <img v-if="senderInfo.user?.face" :src="mediaUrl(senderInfo.user.face)" :alt="senderInfo.user.name" />
+              <div><b>{{ senderInfo.user.name }}</b><small>UID {{ senderInfo.user.mid }}</small></div>
+            </div>
+            <button class="rp-sender-open" @click="api.openBilibili(`https://space.bilibili.com/${senderInfo.user.mid}`)">打开空间</button>
+          </template>
+          <div v-else class="rp-sender-tip">
+            {{ senderInfo.hint }}<br />
+            <code>{{ senderInfo.hash }}</code>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="toast" class="rp-toast">{{ toast }}</div>
 
       <div class="rp-rec">
         <h5>推荐视频</h5>

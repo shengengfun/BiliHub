@@ -8,3 +8,11 @@ const base = import.meta.env.BASE_URL
 export function brand(file) {
   return `${base}brand/${file}`
 }
+
+/**
+ * 解析图标名：带扩展名的原样使用，否则按 PNG 处理。
+ * 便于菜单同时使用 APK 提取的位图与自绘的矢量图标。
+ */
+export function brandIcon(name) {
+  return brand(/\.[a-z0-9]+$/i.test(name) ? name : `${name}.png`)
+}
