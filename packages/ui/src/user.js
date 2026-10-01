@@ -22,3 +22,20 @@ export async function logout() {
   await api.auth.logout()
   user.value = { isLogin: false }
 }
+
+let started = false
+
+/**
+ * 让界面自动跟随登录状态：
+ * 1) 订阅主进程推送的登录成功事件
+ * 2) 定时轮询兜底（例如在 B 站页面窗口完成登录时）
+ * 3) 窗口重新获得焦点时立即刷新
+ */
+export function startUserSync(intervalMs = 4000) {
+  if (!api.hasAuth || started) return
+  started = true
+  api.auth.onChange((payload) => { if (payload) user.value = payload })
+  window.setInterval(() => { refreshUser() }, intervalMs)
+  window.addEventListener('focus', () => { refreshUser() })
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshUser() })
+}

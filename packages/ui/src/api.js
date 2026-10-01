@@ -32,6 +32,8 @@ export const api = {
     status: async () => (native?.auth ? native.auth.status() : { isLogin: false, unsupported: true }),
     login: async () => (native?.auth ? native.auth.login() : { isLogin: false, unsupported: true }),
     logout: async () => (native?.auth ? native.auth.logout() : false),
+    diagnose: async () => (native?.auth?.diagnose ? native.auth.diagnose() : null),
+    onChange: (callback) => (native?.auth?.onChange ? native.auth.onChange(callback) : () => {}),
   },
   openBilibili: async () => native?.openBilibili(),
   closePanel: async () => native?.closePanel(),

@@ -51,8 +51,14 @@ function setupIpc({ getWindow, getUiWindow, storage }) {
     return response.text()
   })
   ipcMain.handle('bilihub:auth:status', () => auth.getStatus())
-  ipcMain.handle('bilihub:auth:login', () => auth.openLogin(getUiWindow()?.window ?? getWindow()))
+  ipcMain.handle('bilihub:auth:login', async () => {
+    const result = await auth.openLogin(getUiWindow()?.window ?? getWindow())
+    // 登录成功后通知面板刷新账号信息
+    if (result?.isLogin) getUiWindow()?.window?.webContents.send('bilihub:auth:changed', result)
+    return result
+  })
   ipcMain.handle('bilihub:auth:logout', () => auth.logout())
+  ipcMain.handle('bilihub:auth:diagnose', () => auth.diagnose())
   ipcMain.handle('bilihub:ui:open', (_event, route) => getUiWindow()?.show(route))
   ipcMain.handle('bilihub:ui:close', () => getUiWindow()?.hide())
   ipcMain.handle('bilihub:plugins:reveal', () => { const dir = pluginsDir(); fs.mkdirSync(dir, { recursive: true }); shell.openPath(dir) })

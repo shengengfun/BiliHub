@@ -21,6 +21,9 @@ app.whenReady().then(() => {
   mainWindow = createMainWindow()
   uiWindow = createUiWindow()
 
+  // 启动时展示客户端面板，B 站页面窗口同时打开
+  uiWindow.window.once('ready-to-show', () => uiWindow.show())
+
   globalShortcut.register('CommandOrControl+Shift+S', () => mainWindow?.webContents.send('bilihub:shortcut:screenshot'))
   globalShortcut.register('CommandOrControl+Shift+B', () => uiWindow?.show())
 })

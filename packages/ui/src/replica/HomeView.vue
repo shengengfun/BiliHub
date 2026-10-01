@@ -3,7 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { fetchPopular, fetchRanking, formatCount, formatDuration, mediaUrl } from '../bili.js'
 import { brand } from '../brand.js'
 import { topIcons } from '../mock.js'
-import { user, login, refreshUser, authSupported } from '../user.js'
+import { user, login, refreshUser, authSupported, startUserSync } from '../user.js'
 
 const emit = defineEmits(['play'])
 const toast = ref('')
@@ -69,6 +69,7 @@ async function onAvatar() {
 onMounted(() => {
   load(activeTab.value)
   refreshUser()
+  startUserSync()
 })
 watch(activeTab, (tab) => load(tab))
 </script>

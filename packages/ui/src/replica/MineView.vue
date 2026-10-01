@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { chatList, messageShortcuts, mineMenus, settingsItems } from '../mock.js'
 import { brand } from '../brand.js'
 import { formatCount, mediaUrl } from '../bili.js'
-import { user, login, refreshUser, logout, authSupported } from '../user.js'
+import { user, login, refreshUser, logout, authSupported, startUserSync } from '../user.js'
 
 defineEmits(['play'])
 
@@ -45,7 +45,10 @@ async function onMenu(label) {
   section.value = label
 }
 
-onMounted(refreshUser)
+onMounted(() => {
+  refreshUser()
+  startUserSync()
+})
 </script>
 
 <template>

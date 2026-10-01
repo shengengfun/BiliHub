@@ -23,6 +23,13 @@ contextBridge.exposeInMainWorld('bilihubUI', {
     status: () => ipcRenderer.invoke('bilihub:auth:status'),
     login: () => ipcRenderer.invoke('bilihub:auth:login'),
     logout: () => ipcRenderer.invoke('bilihub:auth:logout'),
+    diagnose: () => ipcRenderer.invoke('bilihub:auth:diagnose'),
+    // 主进程登录成功后会推送账号信息，面板无需轮询也能立即刷新
+    onChange: (callback) => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('bilihub:auth:changed', listener)
+      return () => ipcRenderer.removeListener('bilihub:auth:changed', listener)
+    },
   },
   openBilibili: () => ipcRenderer.invoke('bilihub:window:open-bilibili'),
   closePanel: () => ipcRenderer.invoke('bilihub:ui:close'),
