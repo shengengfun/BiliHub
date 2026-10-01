@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "id": "ad-block",
+      "name": "广告拦截",
+      "category": "utility",
+      "version": "0.1.0",
+      "description": "清理首页广告卡片和页面广告占位",
+      "settings": [{ "key": "enabled", "type": "boolean", "default": true, "label": "启用广告拦截" }]
+    },
+    {
+      "id": "ambient-light",
+      "name": "AmbientLight",
+      "category": "ambient",
+      "version": "0.1.0",
+      "description": "从视频画面边缘采样并生成沉浸式背景光",
+      "settings": [
+        { "key": "enabled", "type": "boolean", "default": true, "label": "启用氛围光" },
+        { "key": "fps", "type": "number", "default": 15, "label": "采样频率", "min": 1, "max": 30, "step": 1 }
+      ]
+    },
+    {
+      "id": "dark-mode",
+      "name": "夜间模式",
+      "category": "style",
+      "version": "0.1.0",
+      "description": "降低页面亮度并减少夜间观看刺激",
+      "settings": [
+        {
+          "key": "mode",
+          "type": "select",
+          "default": "auto",
+          "label": "模式",
+          "options": [
+            { "label": "跟随系统", "value": "auto" },
+            { "label": "始终开启", "value": "on" },
+            { "label": "关闭", "value": "off" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "custom-navbar",
+      "name": "自定义顶栏",
+      "category": "ui",
+      "version": "0.1.0",
+      "description": "将 BiliHub 工具入口固定到 B 站顶栏",
+      "settings": [{ "key": "compact", "type": "boolean", "default": false, "label": "紧凑顶栏" }]
+    },
+    {
+      "id": "danmaku-enhance",
+      "name": "弹幕优化",
+      "category": "danmaku",
+      "version": "0.1.0",
+      "description": "优化弹幕透明度、字号和密度",
+      "settings": [
+        { "key": "opacity", "type": "range", "default": 0.86, "label": "弹幕透明度", "min": 0.2, "max": 1, "step": 0.05 },
+        { "key": "fontSize", "type": "number", "default": 24, "label": "弹幕字号", "min": 12, "max": 48 }
+      ]
+    },
+    {
+      "id": "danmaku-tools",
+      "name": "弹幕工具",
+      "category": "danmaku",
+      "version": "0.1.0",
+      "description": "发送弹幕并查询弹幕发送人信息",
+      "settings": [
+        { "key": "showSenderHash", "type": "boolean", "default": false, "label": "显示发送人标识" },
+        {
+          "key": "sendMode",
+          "type": "select",
+          "default": "bottom",
+          "label": "发送位置",
+          "options": [
+            { "label": "滚动", "value": "scroll" },
+            { "label": "底部", "value": "bottom" },
+            { "label": "顶部", "value": "top" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comments-enhance",
+      "name": "评论增强",
+      "category": "ui",
+      "version": "0.1.0",
+      "description": "折叠过长评论并突出高质量回复",
+      "settings": [{ "key": "collapseLong", "type": "boolean", "default": true, "label": "折叠长评论" }]
+    },
+    {
+      "id": "download",
+      "name": "下载管理",
+      "category": "video",
+      "version": "0.1.0",
+      "description": "下载视频、封面、弹幕与元数据",
+      "settings": [
+        {
+          "key": "quality",
+          "type": "select",
+          "default": "1080p",
+          "label": "默认画质",
+          "options": [
+            { "label": "1080P", "value": "1080p" },
+            { "label": "720P", "value": "720p" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "live-enhance",
+      "name": "直播增强",
+      "category": "live",
+      "version": "0.1.0",
+      "description": "清理直播礼物特效、侧栏和重复提醒",
+      "settings": [
+        { "key": "hideGiftEffects", "type": "boolean", "default": true, "label": "隐藏礼物特效" },
+        { "key": "hideSidebar", "type": "boolean", "default": false, "label": "隐藏直播侧栏" }
+      ]
+    },
+    {
+      "id": "screenshot",
+      "name": "截图",
+      "category": "video",
+      "version": "0.1.0",
+      "description": "截取当前视频画面并保存",
+      "settings": [{ "key": "includeDanmaku", "type": "boolean", "default": false, "label": "包含弹幕" }]
+    },
+    {
+      "id": "shortcuts",
+      "name": "快捷键",
+      "category": "utility",
+      "version": "0.1.0",
+      "description": "用键盘控制弹幕、截图、下载与氛围光",
+      "settings": [
+        { "key": "toggleDanmaku", "type": "string", "default": "D", "label": "开关弹幕" },
+        { "key": "screenshot", "type": "string", "default": "Shift+S", "label": "截图" },
+        { "key": "download", "type": "string", "default": "Alt+D", "label": "下载" },
+        { "key": "toggleAmbient", "type": "string", "default": "A", "label": "氛围光" }
+      ]
+    },
+    {
+      "id": "sponsor-skip",
+      "name": "自动跳过 UP 主广告",
+      "category": "utility",
+      "version": "0.1.0",
+      "description": "识别弹幕中的推广时间点并提供手动跳过",
+      "settings": [
+        {
+          "key": "mode",
+          "type": "select",
+          "default": "manual",
+          "label": "跳过模式",
+          "options": [
+            { "label": "手动确认", "value": "manual" },
+            { "label": "自动跳过", "value": "auto" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "video-tools",
+      "name": "视频工具",
+      "category": "video",
+      "version": "0.1.0",
+      "description": "截图、画中画和视频画面增强",
+      "settings": [{ "key": "includeDanmaku", "type": "boolean", "default": false, "label": "截图包含弹幕" }]
+    }
+  ]
+}

@@ -8,3 +8,5 @@ release/
 !.env.example
 .DS_Store
 *.apk
+.analysis/
+packages/ui/public/brand/
