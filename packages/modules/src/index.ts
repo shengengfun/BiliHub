@@ -1,3 +1,8 @@
 export { ambientLight } from './ambient-light.js'
 export { darkMode } from './dark-mode.js'
 export { customNavbar } from './custom-navbar.js'
+export { adBlock } from './ad-block.js'
+export { danmakuEnhance } from './danmaku-enhance.js'
+export { commentsEnhance } from './comments-enhance.js'
+export { screenshot } from './screenshot.js'
+export { sponsorSkip, detectSponsorPoints, parseSponsorTime } from './sponsor-skip.js'

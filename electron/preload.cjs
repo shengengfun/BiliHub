@@ -46,11 +46,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const { pathToFileURL } = require('node:url')
     const modulesPath = require('node:path').resolve(__dirname, '../packages/modules/dist/index.js')
     const { installRuntime } = await import(pathToFileURL(runtimePath).href)
-    const { ambientLight, customNavbar, darkMode } = await import(pathToFileURL(modulesPath).href)
+    const { ambientLight, customNavbar, darkMode, adBlock, danmakuEnhance, commentsEnhance, screenshot, sponsorSkip } = await import(pathToFileURL(modulesPath).href)
     await installRuntime({
       get: (key) => window.bilihubNative.storage.get(key),
       set: (key, value) => window.bilihubNative.storage.set(key, value),
-    }, [ambientLight, darkMode, customNavbar])
+    }, [adBlock, ambientLight, danmakuEnhance, darkMode, customNavbar, commentsEnhance, screenshot, sponsorSkip])
   } catch (error) {
     console.error('[BiliHub] runtime install failed', error)
   }
