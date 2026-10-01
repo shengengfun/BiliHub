@@ -58,12 +58,18 @@ async function onMenu(label) {
   section.value = label
 }
 
+/** 刷新账号信息；F5 与头部刷新按钮走同一条路径 */
+async function onRefresh() {
+  await refreshUser()
+  notify('账号信息已刷新')
+}
+
 onMounted(() => {
   refreshUser()
   startUserSync()
-  window.addEventListener('bilihub:refresh', refreshUser)
+  window.addEventListener('bilihub:refresh', onRefresh)
 })
-onBeforeUnmount(() => window.removeEventListener('bilihub:refresh', refreshUser))
+onBeforeUnmount(() => window.removeEventListener('bilihub:refresh', onRefresh))
 </script>
 
 <template>
@@ -138,9 +144,12 @@ onBeforeUnmount(() => window.removeEventListener('bilihub:refresh', refreshUser)
     <section class="rp-mine-right">
       <div class="rp-right-head">
         {{ section }}
-        <span v-if="section === '消息'" class="tools">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="8" r="3.4" /><path d="M3.5 19c0-3.4 2.9-5.6 6.5-5.6" /><path d="M18 11v6M15 14h6" /></svg>
-          <span>⋮</span>
+        <span class="tools">
+          <svg v-if="section === '消息'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="8" r="3.4" /><path d="M3.5 19c0-3.4 2.9-5.6 6.5-5.6" /><path d="M18 11v6M15 14h6" /></svg>
+          <button class="rp-icon-btn" title="刷新（F5）" @click="onRefresh">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4.5V11h-6.2" /></svg>
+          </button>
+          <span v-if="section === '消息'">⋮</span>
         </span>
       </div>
 

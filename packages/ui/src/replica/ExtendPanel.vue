@@ -97,6 +97,45 @@ function settingOn(moduleId, schema) {
   return Boolean(moduleValues.value[moduleId]?.[schema.key])
 }
 
+/** 下载队列多选：普通点击单选，Ctrl/⌘+点击 叠加，与桌面文件列表习惯一致 */
+const selected = ref([])
+
+function toggleSelect(event, item) {
+  if (!event.ctrlKey && !event.metaKey) {
+    selected.value = selected.value.length === 1 && selected.value[0] === item.id ? [] : [item.id]
+    return
+  }
+  selected.value = selected.value.includes(item.id)
+    ? selected.value.filter((id) => id !== item.id)
+    : [...selected.value, item.id]
+}
+
+function selectedItems() {
+  return (downloads.value.items ?? []).filter((item) => selected.value.includes(item.id))
+}
+
+async function pauseSelected() {
+  const items = selectedItems().filter((item) => item.status === 'running' || item.status === 'pending')
+  for (const item of items) await api.pauseDownload(item.id)
+  notify(`已暂停 ${items.length} 项`)
+  await loadDownloads()
+}
+
+async function resumeSelected() {
+  const items = selectedItems().filter((item) => item.status === 'paused' || item.status === 'error')
+  for (const item of items) await api.resumeDownload(item.id)
+  notify(`已继续 ${items.length} 项`)
+  await loadDownloads()
+}
+
+async function removeSelected() {
+  const items = selectedItems().filter((item) => item.status === 'done' || item.status === 'canceled')
+  for (const item of items) await api.removeDownload(item.id)
+  selected.value = []
+  notify(`已移除 ${items.length} 项`)
+  await loadDownloads()
+}
+
 onMounted(async () => {
   await reload()
   if (props.kind === 'download') {
@@ -218,8 +257,21 @@ onUnmounted(() => {
     <!-- 下载管理 -->
     <template v-else>
       <div class="ext-note" v-if="directory">保存目录：<code>{{ directory }}</code></div>
+      <div v-if="selected.length" class="ext-batch">
+        <span>已选 {{ selected.length }} 项</span>
+        <button @click="pauseSelected">全部暂停</button>
+        <button @click="resumeSelected">全部继续</button>
+        <button @click="removeSelected">批量移除</button>
+        <button @click="selected = []">取消选择</button>
+      </div>
       <div v-if="!downloads.items?.length" class="ext-empty">暂无下载任务。</div>
-      <div v-for="item in downloads.items" :key="item.id" class="ext-card">
+      <div
+        v-for="item in downloads.items"
+        :key="item.id"
+        class="ext-card"
+        :class="{ on: selected.includes(item.id) }"
+        @click="toggleSelect($event, item)"
+      >
         <div class="ext-card-head">
           <div>
             <b>{{ item.filename || item.title }}</b>
@@ -259,6 +311,10 @@ onUnmounted(() => {
 .ext-sub { margin: 18px 0 8px; color: var(--rp-text-3); font-size: 12px; }
 .ext-card { margin-top: 12px; padding: 14px 16px; border-radius: 8px; background: var(--rp-bg); }
 .ext-card.off { opacity: .6; }
+/* 多选态用主色描边，与卡片聚焦态保持同一套视觉语言 */
+.ext-card.on { box-shadow: inset 0 0 0 2px var(--rp-pink); }
+.ext-batch { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 9px 12px; border-radius: 8px; background: var(--rp-group); font-size: 12px; color: var(--rp-text-2); }
+.ext-batch span { margin-right: auto; }
 .ext-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .ext-card-head b { font-size: 14px; }
 .ext-card-head b em { font-style: normal; color: var(--rp-text-3); font-size: 12px; }
