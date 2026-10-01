@@ -1,12 +1,51 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { chatList, messageShortcuts, mineMenus, settingsItems } from '../mock.js'
 import { brand } from '../brand.js'
+import { formatCount, mediaUrl } from '../bili.js'
+import { user, login, refreshUser, logout, authSupported } from '../user.js'
 
 defineEmits(['play'])
 
 const section = ref('消息')
 const activeMenu = ref('我的消息')
+const toast = ref('')
+
+function notify(message) {
+  toast.value = message
+  window.clearTimeout(notify.timer)
+  notify.timer = window.setTimeout(() => { toast.value = '' }, 2600)
+}
+
+async function onAccount() {
+  if (!authSupported) {
+    notify('登录需要在 BiliHub 桌面客户端中进行')
+    return
+  }
+  if (user.value.isLogin) {
+    await logout()
+    notify('已退出登录')
+    return
+  }
+  notify('已打开登录窗口，请在窗口中完成登录')
+  const result = await login()
+  notify(result?.isLogin ? `欢迎回来，${result.name}` : '未完成登录')
+}
+
+/** 未登录时点击「我的消息 / 我的收藏」等需要账号的入口 */
+async function onMenu(label) {
+  activeMenu.value = label
+  if (label === '设置') { section.value = '设置'; return }
+  if (!user.value.isLogin) {
+    if (!authSupported) return notify('该功能需要在桌面客户端登录后使用')
+    notify('已打开登录窗口，请在窗口中完成登录')
+    const result = await login()
+    if (!result?.isLogin) return notify('未完成登录')
+  }
+  section.value = label
+}
+
+onMounted(refreshUser)
 </script>
 
 <template>
@@ -14,18 +53,31 @@ const activeMenu = ref('我的消息')
     <aside class="rp-mine-left">
       <div class="rp-profile">
         <div class="rp-profile-top">
-          <div class="av"></div>
+          <button class="rp-avatar-btn" @click="onAccount">
+            <img
+              class="av-img"
+              :src="user.isLogin && user.face ? mediaUrl(user.face) : brand('ic-avatar.png')"
+              :alt="user.isLogin ? user.name : '未登录'"
+            />
+          </button>
           <div class="info">
-            <div class="rp-nick">玩魔爪丶m0NSTER <span class="rp-lv">LV6</span></div>
-            <div class="rp-vip">👑 年度大会员</div>
-            <div class="rp-coins"><span>硬币：1968</span><span>B币：0.0</span></div>
+            <div class="rp-nick">
+              {{ user.isLogin ? user.name : '未登录' }}
+              <span v-if="user.isLogin" class="rp-lv">LV{{ user.level }}</span>
+            </div>
+            <div v-if="user.isLogin && user.vip" class="rp-vip">👑 {{ user.vipLabel || '大会员' }}</div>
+            <div v-else-if="!user.isLogin" class="rp-login-hint" @click="onAccount">点击登录哔哩哔哩账号</div>
+            <div v-if="user.isLogin" class="rp-coins">
+              <span>硬币：{{ user.coin }}</span><span>B币：{{ user.bcoin }}</span>
+            </div>
           </div>
         </div>
-        <div class="rp-stats">
-          <div><b>5086</b>动态</div>
-          <div><b>382</b>关注</div>
-          <div><b>7980</b>粉丝</div>
+        <div v-if="user.isLogin" class="rp-stats">
+          <div><b>—</b>动态</div>
+          <div><b>{{ formatCount(user.following) }}</b>关注</div>
+          <div><b>{{ formatCount(user.follower) }}</b>粉丝</div>
         </div>
+        <div v-else class="rp-stats rp-stats-empty">登录后可查看关注、粉丝与动态数据</div>
       </div>
 
       <div class="rp-promo">
@@ -41,7 +93,7 @@ const activeMenu = ref('我的消息')
           :key="item.label"
           class="rp-menu-item"
           :class="{ on: activeMenu === item.label }"
-          @click="activeMenu = item.label; section = item.label === '设置' ? '设置' : section"
+          @click="onMenu(item.label)"
         >
           <img :src="brand(`${item.icon}.png`)" :alt="item.label" />{{ item.label }}
         </div>
@@ -86,5 +138,7 @@ const activeMenu = ref('我的消息')
         </div>
       </template>
     </section>
+
+    <div v-if="toast" class="rp-toast">{{ toast }}</div>
   </div>
 </template>

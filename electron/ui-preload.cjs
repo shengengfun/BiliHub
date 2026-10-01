@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('bilihubUI', {
   revealPluginFolder: () => ipcRenderer.invoke('bilihub:plugins:reveal'),
   biliApi: (url) => ipcRenderer.invoke('bilihub:bili:api', url),
   biliText: (url) => ipcRenderer.invoke('bilihub:bili:text', url),
+  auth: {
+    status: () => ipcRenderer.invoke('bilihub:auth:status'),
+    login: () => ipcRenderer.invoke('bilihub:auth:login'),
+    logout: () => ipcRenderer.invoke('bilihub:auth:logout'),
+  },
   openBilibili: () => ipcRenderer.invoke('bilihub:window:open-bilibili'),
   closePanel: () => ipcRenderer.invoke('bilihub:ui:close'),
 })

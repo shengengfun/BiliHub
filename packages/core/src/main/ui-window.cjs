@@ -11,13 +11,14 @@ function createUiWindow() {
   const distIndex = path.resolve(__dirname, '../../../../packages/ui/dist/index.html')
 
   const window = new BrowserWindow({
-    width: 1180,
+    // 原包 (tv.danmaku.bilibilihd) 设计宽度为 1170dp，窗口按此宽度可 1:1 还原排版
+    width: 1170,
     height: 820,
     minWidth: 860,
     minHeight: 620,
     show: false,
     title: 'BiliHub 面板',
-    backgroundColor: '#14161b',
+    backgroundColor: '#f1f2f4',
     autoHideMenuBar: true,
     webPreferences: { preload, contextIsolation: true, nodeIntegration: false },
   })

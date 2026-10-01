@@ -26,6 +26,13 @@ export const api = {
   revealPluginFolder: async () => native?.revealPluginFolder(),
   biliApi: async (url) => (native ? native.biliApi(url) : undefined),
   biliText: async (url) => (native ? native.biliText(url) : undefined),
+  // 登录依赖 Electron 会话（Cookie 落在 persist:bilihub），浏览器预览不可用
+  hasAuth: Boolean(native?.auth),
+  auth: {
+    status: async () => (native?.auth ? native.auth.status() : { isLogin: false, unsupported: true }),
+    login: async () => (native?.auth ? native.auth.login() : { isLogin: false, unsupported: true }),
+    logout: async () => (native?.auth ? native.auth.logout() : false),
+  },
   openBilibili: async () => native?.openBilibili(),
   closePanel: async () => native?.closePanel(),
 }

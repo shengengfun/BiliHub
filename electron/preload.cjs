@@ -6,6 +6,12 @@ contextBridge.exposeInMainWorld('bilihubNative', {
   platform: () => ipcRenderer.invoke('bilihub:platform'),
   download: (payload) => ipcRenderer.invoke('bilihub:download', payload),
   httpRequest: (options) => ipcRenderer.invoke('bilihub:http:request', options),
+  auth: {
+    status: () => ipcRenderer.invoke('bilihub:auth:status'),
+    login: () => ipcRenderer.invoke('bilihub:auth:login'),
+    logout: () => ipcRenderer.invoke('bilihub:auth:logout'),
+  },
+  openPanel: () => ipcRenderer.invoke('bilihub:ui:open'),
   saveData: (payload) => ipcRenderer.invoke('bilihub:download:save-data', payload),
   storage: {
     get: (key) => ipcRenderer.invoke('bilihub:storage:get', key),
@@ -27,17 +33,34 @@ function installToolbar() {
   document.head.appendChild(style)
   const toolbar = document.createElement('div')
   toolbar.id = 'bilihub-toolbar'
-  toolbar.innerHTML = '<button data-action="clean">✦ 去广告</button><button data-action="danmaku">≋ 弹幕</button><button data-action="download">↓ 下载</button><button data-action="capture">▣ 截图</button>'
+  toolbar.innerHTML = '<button data-action="account">登录</button><button data-action="panel">面板</button><button data-action="danmaku">弹幕</button><button data-action="download">下载</button><button data-action="capture">截图</button>'
   toolbar.addEventListener('click', async (event) => {
     const button = event.target.closest('button')
     if (!button) return
     const action = button.dataset.action
     if (action === 'capture') await window.bilihubNative.screenshot()
     if (action === 'download') await window.bilihubNative.download({ filename: `bilihub-${Date.now()}.bin` })
+    if (action === 'panel') await window.bilihubNative.openPanel()
+    if (action === 'account') {
+      const status = await window.bilihubNative.auth.status()
+      if (status?.isLogin) {
+        const next = await window.bilihubNative.auth.logout()
+        button.textContent = next ? '已退出' : '登录'
+      } else {
+        button.textContent = '登录中…'
+        const result = await window.bilihubNative.auth.login()
+        button.textContent = result?.isLogin ? (result.name || '已登录') : '登录'
+      }
+    }
     if (action === 'danmaku') { document.body.classList.toggle('bilihub-danmaku-off'); button.classList.toggle('active') }
-    if (action === 'clean') { document.body.classList.toggle('bilihub-clean-on'); button.classList.toggle('active') }
   })
   document.body.appendChild(toolbar)
+
+  // 打开时同步账号按钮文案
+  window.bilihubNative.auth.status().then((status) => {
+    const button = toolbar.querySelector('button[data-action="account"]')
+    if (button && status?.isLogin) button.textContent = status.name || '已登录'
+  }).catch(() => {})
 }
 
 window.addEventListener('DOMContentLoaded', installToolbar, { once: true })

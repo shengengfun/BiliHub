@@ -1,6 +1,7 @@
 const { ipcMain, dialog, session, shell } = require('electron')
 const fs = require('node:fs')
 const path = require('node:path')
+const auth = require('./auth.cjs')
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 const API_HOSTS = ['api.bilibili.com', 'api.live.bilibili.com', 'api.biliapi.net']
@@ -49,6 +50,9 @@ function setupIpc({ getWindow, getUiWindow, storage }) {
     const response = await sessionFetch(url)
     return response.text()
   })
+  ipcMain.handle('bilihub:auth:status', () => auth.getStatus())
+  ipcMain.handle('bilihub:auth:login', () => auth.openLogin(getUiWindow()?.window ?? getWindow()))
+  ipcMain.handle('bilihub:auth:logout', () => auth.logout())
   ipcMain.handle('bilihub:ui:open', (_event, route) => getUiWindow()?.show(route))
   ipcMain.handle('bilihub:ui:close', () => getUiWindow()?.hide())
   ipcMain.handle('bilihub:plugins:reveal', () => { const dir = pluginsDir(); fs.mkdirSync(dir, { recursive: true }); shell.openPath(dir) })
