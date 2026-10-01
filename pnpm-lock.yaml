@@ -44,6 +44,16 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/runtime:
+    dependencies:
+      '@bilihub/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/shared:
     devDependencies:
       typescript:
@@ -2252,7 +2262,7 @@ snapshots:
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 26.6.3
+      '@types/node': 22.20.4
 
   '@types/http-cache-semantics@4.2.0': {}
 
@@ -2276,7 +2286,7 @@ snapshots:
 
   '@types/plist@3.0.5':
     dependencies:
-      '@types/node': 26.6.3
+      '@types/node': 22.20.4
       xmlbuilder: 15.1.1
     optional: true
 
