@@ -1,0 +1,60 @@
+{
+  "$comment": "语义令牌 → APK 资源名 的映射。生成器会校验每个 apk 引用都存在，缺失直接报错，避免悄悄漂移。measured 表示该值来自实机截图逐像素实测，note 记录来源。",
+  "color": {
+    "text-primary": { "apk": "bili_mine_main_style_white", "note": "我的页正文" },
+    "text-section": { "apk": "bili_mine_guide_title_style_white", "note": "分组标题" },
+    "text-arrow": { "apk": "bili_mine_guide_title_arrow_style_white", "note": "分组箭头" },
+    "section-bg": { "apk": "bili_mine_guide_title_bg_style_white", "note": "分组标题底色" },
+    "divider": { "apk": "bili_mine_divider_style_white", "note": "列表分隔线" },
+    "avatar-border": { "apk": "bili_mine_avatar_border", "note": "头像白描边" },
+    "entrance-bg": { "apk": "bili_mine_lv_senior_entrance_bg_style_white", "note": "等级入口底色" },
+    "theme-cover": { "apk": "bilipay_theme_color_navigation_profilecover", "note": "顶部封面主题色" },
+
+    "dm-panel-bg": { "apk": "danmaku_setting_button_bg", "note": "弹幕设置面板底" },
+    "dm-seek-unreached": { "apk": "danmaku_setting_seekbar_unreached", "note": "滑块未到达段" },
+    "dm-action-text": { "apk": "danmaku_settings_action_text", "note": "弹幕面板文字" },
+    "dm-divider": { "apk": "danmaku_settings_divider", "note": "弹幕面板分隔线" },
+
+    "brand": { "measured": "#ff6699", "note": "选中态主色，取自 tab bar 选中色" },
+    "page-bg": { "measured": "#f1f2f4", "note": "页面底色，截图实测" },
+    "surface": { "measured": "#ffffff", "note": "卡片 / 面板底色" },
+    "text-secondary": { "measured": "#61666d", "note": "次级文字，未选中态颜色" },
+    "text-tertiary": { "measured": "#9499a0", "note": "辅助文字" },
+    "warn": { "measured": "#f06b40", "note": "点赞徽章文字" },
+    "warn-bg": { "measured": "#fff1ee", "note": "点赞徽章底色" }
+  },
+
+  "size": {
+    "topbar-h": { "measured": 70, "note": "顶栏 152 设备像素 ÷ 2.188" },
+    "tabbar-h": { "measured": 61, "note": "底栏 133 ÷ 2.188" },
+    "tabbar-item-w": { "measured": 164, "note": "底栏项宽 360 ÷ 2.188" },
+    "feed-pad-x": { "measured": 26, "note": "信息流左右边距 56 ÷ 2.188" },
+    "feed-pad-y": { "measured": 16, "note": "信息流上边距 36 ÷ 2.188" },
+    "feed-gap": { "measured": 16, "note": "卡片间距 36 ÷ 2.188" },
+    "card-body-h": { "measured": 90, "note": "卡片正文 196 ÷ 2.188" },
+    "mine-left-w": { "measured": 291, "note": "左栏 637 ÷ 2.188（布局权重 1:3，左栏占 1/4）" },
+    "mine-head-h": { "measured": 74, "note": "右栏头部 162 ÷ 2.188" },
+    "mine-row-h": { "measured": 44, "note": "设置行 96 ÷ 2.188" },
+    "mine-row-gap": { "measured": 10, "note": "设置分组间隔 23 ÷ 2.188" },
+    "mine-chat-h": { "measured": 70, "note": "聊天行 153 ÷ 2.188" },
+    "mine-shortcut-h": { "measured": 89, "note": "快捷入口行 195 ÷ 2.188" },
+    "dynamic-content-w": { "measured": 772, "note": "动态页内容宽 1690 ÷ 2.188" },
+    "dynamic-list-w": { "measured": 191, "note": "动态页左栏 418 ÷ 2.188" },
+    "dynamic-feed-w": { "measured": 580, "note": "动态页右栏 1270 ÷ 2.188" },
+    "player-side-w": { "measured": 384, "note": "播放页侧栏 840 ÷ 2.188" },
+
+    "player-bar-h": { "apk": "player_bottom_controller_bar_layout_height" },
+    "player-panel-h": { "apk": "player_bottom_controller_pannel_layout_height" },
+    "player-btn-h": { "apk": "player_button_height_normal" },
+    "player-btn-w": { "apk": "player_controller_bar_button_layout_width" },
+    "dm-panel-h-land": { "apk": "player_danmaku_option_landscape_height" },
+    "dm-panel-h-port": { "apk": "player_danmaku_option_vertical_height" }
+  },
+
+  "text": {
+    "mine-guest-status": { "apk": "mine_not_login_status", "note": "未登录时我的页显示的状态文案" },
+    "home-guest-tip": { "apk": "tip_home_no_login", "note": "未登录时的首页提示" },
+    "danmaku-offline": { "apk": "Player_danmaku_keyword_not_login", "note": "离线态弹幕提示" },
+    "comment-guest": { "apk": "comment2_not_login", "note": "评论区未登录提示" }
+  }
+}

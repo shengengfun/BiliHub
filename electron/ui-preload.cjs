@@ -67,6 +67,9 @@ contextBridge.exposeInMainWorld('bilihubUI', {
   saveData: (payload) => ipcRenderer.invoke('bilihub:download:save-data', payload),
   closePanel: () => ipcRenderer.invoke('bilihub:ui:close'),
 
+  // 空间资料（含空间装扮）
+  spaceProfile: (mid) => ipcRenderer.invoke('bilihub:space:profile', mid),
+
   // 设置导入导出
   exportSettings: () => ipcRenderer.invoke('bilihub:settings:export'),
   importSettings: (options) => ipcRenderer.invoke('bilihub:settings:import', options),

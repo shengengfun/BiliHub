@@ -1,56 +1,81 @@
-const { BrowserWindow, session } = require('electron')
+const { BrowserWindow } = require('electron')
+const { biliSession, cookieHeader, csrfToken, invalidateCookieCache, getJson, UA, PARTITION } = require('./http.cjs')
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 const NAV_URL = 'https://api.bilibili.com/x/web-interface/nav'
 const LOGIN_URL = 'https://passport.bilibili.com/login'
-const PARTITION = 'persist:bilihub'
-
-function biliSession() {
-  return session.fromPartition(PARTITION)
-}
-
-/** 读取会话中所有 bilibili 域 Cookie，拼成请求头 */
-async function cookieHeader() {
-  const cookies = await biliSession().cookies.get({ domain: 'bilibili.com' })
-  return cookies.filter((cookie) => cookie.value).map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')
-}
+const SPACE_API = 'https://api.bilibili.com/x/space/wbi/acc/info'
 
 async function hasLoginCookie() {
   const cookies = await biliSession().cookies.get({ domain: 'bilibili.com' })
   return cookies.some((cookie) => cookie.name === 'SESSDATA' && cookie.value)
 }
 
-/**
- * 请求 nav 接口判定登录态。
- * 显式附带 Cookie 头（不依赖 fetch 的默认凭据策略），失败时回退 Node fetch。
- */
+/** 请求 nav 接口判定登录态 */
 async function requestNav() {
-  const cookie = await cookieHeader()
-  const headers = { 'User-Agent': UA, Referer: 'https://www.bilibili.com/' }
-  if (cookie) headers.Cookie = cookie
-
-  try {
-    const response = await biliSession().fetch(NAV_URL, { headers, credentials: 'include' })
-    return await response.json()
-  } catch (error) {
-    const response = await fetch(NAV_URL, { headers })
-    return await response.json()
-  }
+  return getJson(NAV_URL)
 }
 
+/**
+ * nav → 客户端账号模型。
+ * 装扮相关字段全部落在这里：头像挂件、昵称颜色、大会员图标与头像角标。
+ */
 function mapUser(data) {
+  const vip = data.vip ?? {}
+  const label = vip.label ?? {}
+  const pendant = data.pendant ?? {}
+  const nameplate = data.nameplate ?? {}
+
   return {
     isLogin: true,
     mid: data.mid,
     name: data.uname,
     face: data.face,
     level: data.level_info?.current_level ?? 0,
-    vip: Boolean(data.vipStatus),
-    vipLabel: data.vip_label?.text ?? '',
-    coin: data.money ?? 0,
+    coin: Math.floor(data.money ?? 0),
     bcoin: data.wallet?.bcoin_balance ?? 0,
-    following: data.following ?? 0,
-    follower: data.follower ?? 0,
+
+    // 装扮
+    pendant: pendant.image || pendant.image_enhance
+      ? { name: pendant.name ?? '', image: pendant.image_enhance || pendant.image, frame: pendant.image_enhance_frame ?? '' }
+      : null,
+    nameplate: nameplate.image ? { name: nameplate.name ?? '', image: nameplate.image, level: nameplate.level ?? '' } : null,
+    nicknameColor: vip.nickname_color || '',
+    avatarIcon: vip.avatar_icon?.icon_resource?.url ?? '',
+    vip: Boolean(vip.status),
+    vipLabel: label.text ?? '',
+    // use_img_label 为真时用静态图片，否则用色块 + 文字渲染
+    vipLabelImage: label.use_img_label ? (label.img_label_uri_hans_static || label.path || '') : '',
+    vipBgColor: label.bg_color || '#FB7299',
+    vipTextColor: label.text_color || '#FFFFFF',
+    vipDueDate: vip.due_date ?? 0,
+    official: data.official?.role ? { role: data.official.role, title: data.official.title ?? '' } : null,
+  }
+}
+
+/** 关注 / 粉丝数：nav 不再返回，改用公开的关系接口 */
+async function fetchRelation(mid) {
+  if (!mid) return { following: 0, follower: 0 }
+  try {
+    const json = await getJson(`https://api.bilibili.com/x/relation/stat?vmid=${mid}`, { referer: `https://space.bilibili.com/${mid}` })
+    return { following: json?.data?.following ?? 0, follower: json?.data?.follower ?? 0 }
+  } catch {
+    return { following: 0, follower: 0 }
+  }
+}
+
+/** 空间装扮：acc/info 需要 WBI 签名，由调用方通过页面捕获提供，这里只做字段归一 */
+function mapSpaceProfile(data) {
+  if (!data) return null
+  return {
+    mid: data.mid,
+    name: data.name,
+    face: data.face,
+    sign: data.sign ?? '',
+    level: data.level ?? 0,
+    pendant: data.pendant?.image ? { name: data.pendant.name ?? '', image: data.pendant.image_enhance || data.pendant.image } : null,
+    nameplate: data.nameplate?.image ? { name: data.nameplate.name ?? '', image: data.nameplate.image } : null,
+    vip: data.vip ?? null,
+    official: data.official ?? null,
   }
 }
 
@@ -58,7 +83,11 @@ function mapUser(data) {
 async function getStatus() {
   try {
     const nav = await requestNav()
-    if (nav?.data?.isLogin) return mapUser(nav.data)
+    if (nav?.data?.isLogin) {
+      const user = mapUser(nav.data)
+      Object.assign(user, await fetchRelation(user.mid))
+      return user
+    }
     return { isLogin: false, code: nav?.code ?? null, hasCookie: await hasLoginCookie() }
   } catch (error) {
     return { isLogin: false, error: String(error?.message ?? error) }
@@ -100,7 +129,9 @@ function openLogin(parent) {
         const nav = await requestNav()
         if (nav?.data?.isLogin) {
           console.log('[bilihub:auth] 登录成功（接口判据）:', nav.data.uname, 'tid', ticks)
-          finish(mapUser(nav.data))
+          const user = mapUser(nav.data)
+          Object.assign(user, await fetchRelation(user.mid))
+          finish(user)
           if (!win.isDestroyed()) win.close()
           return
         }
@@ -120,6 +151,7 @@ function openLogin(parent) {
 /** 退出登录：清理 B 站相关站点数据 */
 async function logout() {
   await biliSession().clearStorageData({ storages: ['cookies', 'localstorage', 'indexdb', 'cachestorage'] })
+  invalidateCookieCache()
   return true
 }
 
@@ -138,10 +170,4 @@ async function diagnose() {
   return { cookieCount: cookies.length, hasSESSDATA: names.includes('SESSDATA'), cookieNames: names, nav, error }
 }
 
-/** 读取 bili_jct（CSRF token），写操作接口必须携带 */
-async function csrfToken() {
-  const cookies = await biliSession().cookies.get({ domain: 'bilibili.com', name: 'bili_jct' })
-  return cookies[0]?.value ?? ''
-}
-
-module.exports = { getStatus, openLogin, logout, diagnose, biliSession, cookieHeader, csrfToken, UA }
+module.exports = { getStatus, openLogin, logout, diagnose, mapSpaceProfile, biliSession, cookieHeader, csrfToken, invalidateCookieCache, UA, PARTITION, SPACE_API }

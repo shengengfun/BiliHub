@@ -103,6 +103,9 @@ export const api = {
   saveData: async (payload) => (native?.saveData ? native.saveData(payload) : undefined),
   closePanel: async () => native?.closePanel(),
 
+  // 空间资料（含空间装扮）
+  spaceProfile: async (mid) => (native?.spaceProfile ? native.spaceProfile(mid) : null),
+
   // 设置导入导出
   exportSettings: async () => (native?.exportSettings ? native.exportSettings() : { ok: false, error: '仅桌面客户端支持' }),
   importSettings: async (options) => (native?.importSettings ? native.importSettings(options) : { ok: false, error: '仅桌面客户端支持' }),

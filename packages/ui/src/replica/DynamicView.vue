@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { fetchDynamicFeed, formatCount, formatRelative, mediaUrl } from '../bili.js'
 import { api } from '../api.js'
+import UserAvatar from './UserAvatar.vue'
 
 // 动态流是 WBI 接口：按 guide.md 约定不自行实现签名，
 // 而是通过捕获真实页面（t.bilibili.com）自身发出的请求获取数据。
@@ -42,7 +43,6 @@ async function load() {
   }
 }
 
-/** 打开动态原页面，顺带刷新捕获缓存 */
 function openSource(post) {
   if (post.bvid) return
   api.openBilibili('https://t.bilibili.com/')
@@ -78,10 +78,8 @@ onMounted(load)
         :class="{ on: activeUser === user.name }"
         @click="activeUser = user.name"
       >
-        <div class="av">
-          <img v-if="user.face" :src="mediaUrl(user.face)" :alt="user.name" loading="lazy" />
-        </div>
-        <span>{{ user.name }}</span>
+        <UserAvatar :src="user.face" :pendant="user.pendant" :vip-icon="user.vipIcon" :size="34" />
+        <span :style="user.nicknameColor ? { color: user.nicknameColor } : null">{{ user.name }}</span>
       </div>
     </aside>
 
@@ -95,32 +93,36 @@ onMounted(load)
 
       <article v-for="post in visible" :key="post.id" class="rp-post">
         <div class="rp-post-head">
-          <div class="av">
-            <img v-if="post.author.face" :src="mediaUrl(post.author.face)" :alt="post.author.name" loading="lazy" />
-          </div>
+          <UserAvatar
+            :src="post.author.face"
+            :pendant="post.author.pendant"
+            :vip-icon="post.author.vipIcon"
+            :size="55"
+          />
           <div class="who">
-            <b>{{ post.author.name }}</b>
+            <b :style="post.author.nicknameColor ? { color: post.author.nicknameColor } : null">{{ post.author.name }}</b>
             <small>{{ post.pubText || formatRelative(post.pubTime) }}</small>
           </div>
-          <span class="rp-more" title="在浏览器中打开" @click="openSource(post)">⋯</span>
+          <img v-if="post.author.medal" class="rp-post-medal" :src="mediaUrl(post.author.medal.image)" :alt="post.author.medal.name" loading="lazy" />
+          <span class="rp-more" title="在浏览器中打开" @click="openSource(post)">⋮</span>
         </div>
 
         <p v-if="post.text" class="rp-post-text">{{ post.text }}</p>
 
-        <div v-if="post.type === 'video'" class="rp-dyn-video" @click="$emit('play', { bvid: post.bvid })">
-          <div class="cover">
-            <img :src="mediaUrl(post.cover)" :alt="post.title" loading="lazy" />
-            <span v-if="post.duration">{{ post.duration }}</span>
-          </div>
-          <div class="info">
-            <h4>{{ post.title }}</h4>
-            <p v-if="post.description">{{ post.description }}</p>
+        <!-- 视频投稿：原包用整卡宽度的封面，不缩略 -->
+        <div v-if="post.type === 'video' && post.cover" class="rp-dyn-cover" @click="$emit('play', { bvid: post.bvid })">
+          <img :src="mediaUrl(post.cover)" :alt="post.title" loading="lazy" />
+          <span v-if="post.duration" class="duration">{{ post.duration }}</span>
+          <div v-if="post.stat.danmaku" class="overlay">
+            <span class="play-tri">▶</span>{{ formatCount(post.stat.danmaku) }}
           </div>
         </div>
-
-        <div v-else-if="post.cover" class="rp-dyn-image">
+        <div v-else-if="post.cover" class="rp-dyn-cover" @click="openSource(post)">
           <img :src="mediaUrl(post.cover)" :alt="post.title || '动态图片'" loading="lazy" />
         </div>
+
+        <h4 v-if="post.title" class="rp-dyn-title">{{ post.title }}</h4>
+        <p v-if="post.description" class="rp-dyn-desc">{{ post.description }}</p>
 
         <div class="rp-dyn-stat">
           <span>转发 {{ formatCount(post.stat.forward) }}</span>

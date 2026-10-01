@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
+  coinVideo,
   fetchComments,
   fetchDanmakuXml,
   fetchPlayUrl,
@@ -10,6 +11,7 @@ import {
   formatDate,
   formatDuration,
   formatRelative,
+  likeVideo,
   lookupDanmakuSender,
   mediaUrl,
   qualityLabel,
@@ -50,6 +52,10 @@ const showQuality = ref(false)
 const showRate = ref(false)
 const busy = ref('')
 const toast = ref('')
+const descOpen = ref(false)
+const liked = ref(false)
+const dragging = ref(false)
+const brightness = ref(1)
 let toastTimer = null
 let pendingSeek = 0
 
@@ -119,6 +125,84 @@ function seekTo(event) {
   const rect = bar.getBoundingClientRect()
   const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
   el.currentTime = ratio * duration.value
+}
+
+/** 桌面端：按住进度条拖拽 */
+function startSeekDrag(event) {
+  seekTo(event)
+  dragging.value = true
+  const move = (moveEvent) => seekTo(moveEvent)
+  const up = () => {
+    dragging.value = false
+    window.removeEventListener('mousemove', move)
+    window.removeEventListener('mouseup', up)
+  }
+  window.addEventListener('mousemove', move)
+  window.addEventListener('mouseup', up)
+  pokeControls()
+}
+
+/** 桌面端：滚轮在画面上调音量；Shift+滚轮 快进后退；Alt+滚轮 调应用内亮度 */
+function onWheel(event) {
+  const el = videoEl.value
+  if (!el) return
+  event.preventDefault()
+
+  if (event.altKey) {
+    const next = Math.min(1.6, Math.max(0.3, Number((brightness.value + (event.deltaY < 0 ? 0.06 : -0.06)).toFixed(2))))
+    brightness.value = next
+    showToast(`亮度 ${Math.round(next * 100)}%`)
+    return
+  }
+
+  const step = event.deltaY < 0 ? 0.05 : -0.05
+  if (event.shiftKey) {
+    el.currentTime = Math.min(el.duration || Infinity, Math.max(0, el.currentTime + (event.deltaY < 0 ? 5 : -5)))
+    pokeControls()
+    return
+  }
+  const next = Math.min(1, Math.max(0, Number((el.volume + step).toFixed(2))))
+  onVolume(next)
+  showToast(`音量 ${Math.round(next * 100)}%`)
+}
+
+/** 桌面端：双击画面切全屏 */
+function onStageDblClick() {
+  if (dragging.value) return
+  toggleFullscreen()
+}
+
+async function toggleLike() {
+  if (!user.value?.isLogin) return showToast('请先登录')
+  try {
+    await likeVideo(props.bvid, liked.value ? 4 : 1)
+    liked.value = !liked.value
+    detail.value.stat.like += liked.value ? 1 : -1
+    showToast(liked.value ? '已点赞' : '已取消点赞')
+  } catch (e) {
+    showToast(e.message)
+  }
+}
+
+async function addCoin() {
+  if (!user.value?.isLogin) return showToast('请先登录')
+  try {
+    await coinVideo(props.bvid, 1)
+    detail.value.stat.coin += 1
+    showToast('已投币')
+  } catch (e) {
+    showToast(e.message)
+  }
+}
+
+async function shareVideo() {
+  const url = `https://www.bilibili.com/video/${props.bvid}`
+  try {
+    await navigator.clipboard.writeText(url)
+    showToast('链接已复制')
+  } catch {
+    showToast(url)
+  }
 }
 
 function toggleFullscreen() {
@@ -429,9 +513,22 @@ function onLoadedMetadata() {
 
 function onKey(event) {
   if (event.target instanceof HTMLInputElement) return
+  // Esc 与 Alt+← 对应原包的返回手势
+  if (event.key === 'Escape') {
+    if (document.fullscreenElement) return
+    event.preventDefault()
+    emit('close')
+    return
+  }
+  if (event.altKey && event.key === 'ArrowLeft') {
+    event.preventDefault()
+    emit('close')
+    return
+  }
   if (event.code === 'Space') { event.preventDefault(); togglePlay() }
   else if (event.key === 'f') toggleFullscreen()
   else if (event.key === 'd') dm.value.on = !dm.value.on
+  else if (event.key === 'm') toggleMute()
   pokeControls()
 }
 
@@ -458,7 +555,7 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
 <template>
   <div class="rp-player">
     <div class="rp-player-video">
-      <div ref="stageEl" class="rp-player-stage" @mousemove="pokeControls">
+      <div ref="stageEl" class="rp-player-stage" :style="{ filter: brightness !== 1 ? `brightness(${brightness})` : undefined }" @mousemove="pokeControls" @wheel="onWheel" @dblclick="onStageDblClick">
         <video
           v-if="playUrl"
           ref="videoEl"
@@ -502,7 +599,7 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
               <img :src="brand(playing ? 'player-pause.svg' : 'player-play.svg')" alt="播放" />
             </button>
 
-            <div ref="progressEl" class="rp-ctl-seek" @click="seekTo">
+            <div ref="progressEl" class="rp-ctl-seek" @mousedown.prevent="startSeekDrag">
               <div class="rp-ctl-seek-track"></div>
               <div class="rp-ctl-seek-played" :style="{ width: `${progressPercent}%` }"></div>
               <div class="rp-ctl-seek-thumb" :style="{ left: `${progressPercent}%` }"></div>
@@ -620,18 +717,43 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
           <div class="who"><b>{{ detail.owner.name }}</b><small>{{ formatDuration(detail.duration) }} · {{ detail.pages.length }} P</small></div>
           <button class="rp-follow-btn">＋ 关注</button>
         </div>
-        <div class="rp-player-title"><span class="grow">{{ detail.title }}</span></div>
+        <div class="rp-player-title">
+          <span class="grow">{{ detail.title }}</span>
+          <button class="rp-title-toggle" :class="{ open: descOpen }" title="展开简介" @click="descOpen = !descOpen">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+        </div>
         <div class="rp-player-meta">
-          <span>▶ {{ formatCount(detail.stat.view) }}</span>
-          <span>💬 {{ formatCount(detail.stat.danmaku) }}</span>
+          <span class="rp-meta-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5 20.5 12 4 20.5z" /></svg>{{ formatCount(detail.stat.view) }}
+          </span>
+          <span class="rp-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 12.5c0 3.6-3.6 6.5-8 6.5-1 0-2-.15-2.9-.42L4.5 20l1.2-3.3C4.6 15.6 4 14.1 4 12.5 4 8.9 7.6 6 12 6s8 2.9 8 6.5z" /></svg>{{ formatCount(detail.stat.danmaku) }}
+          </span>
           <span>{{ formatDate(detail.pubdate) }}</span>
           <span class="rp-danmaku-toggle" :class="{ on: dm.on }" @click="dm.on = !dm.on">弹幕 {{ dm.on ? '开' : '关' }}</span>
         </div>
         <div class="rp-player-actions">
-          <div class="rp-action"><span class="ic">赞</span>{{ formatCount(detail.stat.like) }}</div>
-          <div class="rp-action"><span class="ic">币</span>{{ formatCount(detail.stat.coin) }}</div>
-          <div class="rp-action"><span class="ic">藏</span>{{ formatCount(detail.stat.favorite) }}</div>
-          <div class="rp-action"><span class="ic">享</span>{{ formatCount(detail.stat.share) }}</div>
+          <div class="rp-action" :class="{ on: liked }" title="点赞" @click="toggleLike">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M2 21h3V9H2v12Zm19.2-10.6c.5-.6.8-1.4.8-2.2 0-1.5-1.2-2.7-2.7-2.7h-5.1l.8-3.5.02-.25a1.4 1.4 0 0 0-.43-1.02L13.9 0 7.6 6.3c-.4.4-.6.9-.6 1.5v9.4a2 2 0 0 0 2 2h8.6c.8 0 1.5-.4 1.8-1.1l2.8-7.6Z" /></svg></span>
+            {{ formatCount(detail.stat.like) }}
+          </div>
+          <div class="rp-action" title="不喜欢" @click="showToast('已标记为不喜欢')">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M22 3h-3v12h3V3ZM2.8 13.6c-.5.6-.8 1.4-.8 2.2 0 1.5 1.2 2.7 2.7 2.7h5.1l-.8 3.5-.02.25c0 .4.17.78.43 1.02L10.1 24l6.3-6.3c.4-.4.6-.9.6-1.5V6.8a2 2 0 0 0-2-2H6.4c-.8 0-1.5.4-1.8 1.1l-2.8 7.6Z" /></svg></span>
+            不喜欢
+          </div>
+          <div class="rp-action" title="投币" @click="addCoin">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 1.5A10.5 10.5 0 1 0 22.5 12 10.5 10.5 0 0 0 12 1.5Zm0 19A8.5 8.5 0 1 1 20.5 12 8.5 8.5 0 0 1 12 20.5Z" /><path d="M13.6 5.6h-2.2v4.3H7.1v2.2h4.3v4.3h2.2v-4.3h4.3v-2.2h-4.3z" /></svg></span>
+            {{ formatCount(detail.stat.coin) }}
+          </div>
+          <div class="rp-action" title="收藏" @click="showToast('已加入收藏夹')">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.1-5.9 3.1 1.2-6.5L2.5 9.5l6.6-.9z" /></svg></span>
+            {{ formatCount(detail.stat.favorite) }}
+          </div>
+          <div class="rp-action" title="分享" @click="shareVideo">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M14 5.5V2l9 7-9 7v-3.6C8.5 12.4 4.6 13.3 1.5 17c1.6-6.4 5.6-10.3 12.5-11.5Z" /></svg></span>
+            {{ formatCount(detail.stat.share) }}
+          </div>
         </div>
         <div class="rp-player-downloads">
           <button :disabled="busy === 'stream'" @click="downloadVideo">下载视频</button>
@@ -639,8 +761,9 @@ watch(() => props.bvid, (bvid) => bvid && load(bvid))
           <button @click="downloadDanmaku">下载弹幕</button>
           <button @click="downloadMetadata">导出信息</button>
         </div>
-        <div v-if="sideTab === '简介'" class="rp-desc">{{ detail.desc || '暂无简介' }}</div>
-        <div v-else-if="sideTab === '评论'" class="rp-comments">
+        <div v-if="descOpen" class="rp-desc">{{ detail.desc || '暂无简介' }}</div>
+        <div v-else-if="sideTab === '简介'" class="rp-desc">{{ (detail.desc || '暂无简介').slice(0, 80) }}{{ (detail.desc || '').length > 80 ? '…' : '' }}</div>
+        <div v-if="sideTab === '评论'" class="rp-comments">
           <div v-if="comments.loading" class="rp-comments-tip">正在加载评论…</div>
           <div v-else-if="comments.error" class="rp-comments-tip">
             {{ comments.error }}

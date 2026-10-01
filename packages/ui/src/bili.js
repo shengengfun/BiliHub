@@ -395,16 +395,29 @@ function normalizeDynamic(item) {
   return {
     id: item.id_str,
     type: kind,
-    author: { mid: author.mid ?? 0, name: author.name ?? '', face: author.face ?? '' },
+    author: {
+      mid: author.mid ?? 0,
+      name: author.name ?? '',
+      face: author.face ?? '',
+      // 装扮：头像挂件、昵称颜色、大会员角标
+      pendant: author.pendant?.image ? { name: author.pendant.name ?? '', image: author.pendant.image_enhance || author.pendant.image } : null,
+      nicknameColor: author.vip?.nickname_color ?? '',
+      vipIcon: author.vip?.avatar_subscript ? (author.vip?.avatar_icon?.icon_resource?.url ?? '') : '',
+      // 粉丝勋章（装扮卡片）
+      medal: author.decorate?.card_url ? { image: author.decorate.card_url, name: author.decorate.fan?.name ?? '', level: author.decorate.fan?.number ?? 0 } : null,
+      official: author.official_verify?.type ? author.official_verify.desc ?? '' : '',
+    },
     pubTime: author.pub_ts ?? 0,
     pubText: author.pub_time ?? '',
-    text: (dynamic.desc?.text ?? item.modules?.module_dynamic?.desc?.text ?? '').trim(),
+    text: (dynamic.desc?.text ?? '').trim(),
     title,
     description,
     cover,
     bvid: archive?.bvid ?? '',
     duration: archive?.duration_text ?? '',
     stat: {
+      play: archive?.stat?.play ?? '',
+      danmaku: archive?.stat?.danmaku ?? 0,
       comment: item.modules?.module_stat?.comment?.count ?? 0,
       like: item.modules?.module_stat?.like?.count ?? 0,
       forward: item.modules?.module_stat?.forward?.count ?? 0,

@@ -32,7 +32,13 @@ jobs:
       - name: 构建 UI
         run: pnpm --filter @bilihub/ui build
 
-      - name: 校验模块注册表与实现一致
+      - name: 校验主进程 require/export 一致
+        run: node tools/verify-requires.mjs
+
+      - name: 校验设计令牌与模块注册表未漂移
         run: |
+          pip install --quiet pillow
+          python tools/extract-tokens.py
+          node tools/gen-tokens.mjs
           node tools/gen-registry.mjs
-          git diff --exit-code registry/modules.json
+          git diff --exit-code registry/modules.json packages/ui/src/tokens.css packages/ui/src/tokens.js

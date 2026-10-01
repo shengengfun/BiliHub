@@ -2,9 +2,12 @@
 import { onMounted, ref } from 'vue'
 import { chatList, messageShortcuts, mineMenus, settingsItems } from '../mock.js'
 import { brand, brandIcon } from '../brand.js'
-import { formatCount, mediaUrl } from '../bili.js'
+import { formatCount } from '../bili.js'
 import { user, login, refreshUser, logout, authSupported, startUserSync } from '../user.js'
+import { api } from '../api.js'
+import { mineGuestStatus } from '../tokens.js'
 import ExtendPanel from './ExtendPanel.vue'
+import UserAvatar from './UserAvatar.vue'
 
 /**
  * 版面按截图实测：
@@ -66,20 +69,27 @@ onMounted(() => {
     <aside class="rp-mine-left">
       <div class="rp-profile">
         <div class="rp-profile-top">
-          <button class="rp-avatar-btn" title="账号" @click="onAccount">
-            <img
-              class="av-img"
-              :src="user.isLogin && user.face ? mediaUrl(user.face) : brand('ic-avatar.png')"
-              :alt="user.isLogin ? user.name : '未登录'"
+          <button class="rp-avatar-btn" :title="user.isLogin ? '账号' : '登录'" @click="onAccount">
+            <UserAvatar
+              :src="user.isLogin ? user.face : ''"
+              :pendant="user.isLogin ? user.pendant : null"
+              :nameplate="user.isLogin ? user.nameplate : null"
+              :vip-icon="user.isLogin ? user.avatarIcon : ''"
+              :guest="!user.isLogin"
+              :size="67"
+              :round="false"
             />
           </button>
           <div class="info">
             <div class="rp-nick">
-              <span>{{ user.isLogin ? user.name : '未登录' }}</span>
+              <span :style="user.isLogin && user.nicknameColor ? { color: user.nicknameColor } : null">
+                {{ user.isLogin ? user.name : mineGuestStatus }}
+              </span>
               <span v-if="user.isLogin" class="rp-lv">LV{{ user.level }}</span>
             </div>
-            <div v-if="user.isLogin && user.vip" class="rp-vip">👑 {{ user.vipLabel || '年度大会员' }}</div>
-            <div v-else-if="!user.isLogin" class="rp-login-hint" @click="onAccount">点击登录哔哩哔哩账号</div>
+            <img v-if="user.isLogin && user.vipLabelImage" class="rp-vip-label" :src="user.vipLabelImage" :alt="user.vipLabel" />
+            <span v-else-if="user.isLogin && user.vip" class="rp-vip" :style="{ background: user.vipBgColor, color: user.vipTextColor }">{{ user.vipLabel || '大会员' }}</span>
+            <div v-else-if="!user.isLogin" class="rp-login-hint" @click="onAccount">点击登录</div>
             <div v-if="user.isLogin" class="rp-coins">
               <span>硬币：{{ user.coin }}</span><span>B币：{{ user.bcoin }}</span>
             </div>
@@ -88,16 +98,25 @@ onMounted(() => {
       </div>
 
       <div v-if="user.isLogin" class="rp-stats">
-        <div><b>—</b>动态</div>
+        <div><b>{{ user.dynamicCount ?? '—' }}</b>动态</div>
         <div><b>{{ formatCount(user.following) }}</b>关注</div>
         <div><b>{{ formatCount(user.follower) }}</b>粉丝</div>
       </div>
-      <div v-else class="rp-stats rp-stats-empty">登录后可查看关注、粉丝与动态数据</div>
+      <div v-else class="rp-stats">
+        <div><b>—</b>动态</div>
+        <div><b>—</b>关注</div>
+        <div><b>—</b>粉丝</div>
+      </div>
 
       <div class="rp-promo">
-        <b>三角洲行动S10新赛季！</b>
-        <small>大会员点击领好礼</small>
-        <button>大会员中心</button>
+        <div class="rp-promo-title">
+          <span class="rp-promo-badge">大</span>
+          <div class="rp-promo-text">
+            <b>三角洲行动S10新赛季！</b>
+            <small>大会员点击领好礼</small>
+          </div>
+        </div>
+        <button @click="api.openBilibili('https://account.bilibili.com/big')">大会员中心</button>
       </div>
 
       <div v-for="group in mineMenus" :key="group.group" class="rp-menu-group">

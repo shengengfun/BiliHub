@@ -1,22 +1,19 @@
-const { ipcMain, dialog, session, shell } = require('electron')
+const { ipcMain, dialog, shell } = require('electron')
 const fs = require('node:fs')
 const path = require('node:path')
 const auth = require('./auth.cjs')
+const http = require('./http.cjs')
 const download = require('./download.cjs')
 const modules = require('./modules.cjs')
 const plugins = require('./plugins.cjs')
 const capture = require('./capture.cjs')
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-const REFERER = 'https://www.bilibili.com/'
 const API_HOSTS = ['api.bilibili.com', 'api.live.bilibili.com', 'api.biliapi.net']
 
-async function sessionFetch(url, responseType) {
+function assertAllowed(url) {
   const target = new URL(url)
   if (!API_HOSTS.includes(target.hostname)) throw new Error(`Domain not allowed: ${target.hostname}`)
-  const ses = session.fromPartition('persist:bilihub')
-  const response = await ses.fetch(url, { headers: { 'User-Agent': UA, Referer: 'https://www.bilibili.com/', Origin: 'https://www.bilibili.com' } })
-  return response
+  return target
 }
 
 function setupIpc({ getWindow, getUiWindow, storage }) {
@@ -35,7 +32,7 @@ function setupIpc({ getWindow, getUiWindow, storage }) {
     const url = new URL(options.url)
     const allowed = ['bilibili.com', 'biliapi.net', 'hdslb.com']
     if (!allowed.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`))) throw new Error(`Domain not allowed: ${url.hostname}`)
-    const response = await session.fromPartition('persist:bilihub').fetch(options.url, { method: options.method ?? 'GET', headers: options.headers, body: options.body })
+    const response = await http.request(options.url, { method: options.method ?? 'GET', headers: options.headers, body: options.body })
     const data = options.responseType === 'text' ? await response.text() : await response.json()
     return { status: response.status, data }
   })
@@ -62,36 +59,21 @@ function setupIpc({ getWindow, getUiWindow, storage }) {
     return true
   })
   ipcMain.handle('bilihub:bili:api', async (_event, url) => {
-    const response = await sessionFetch(url)
+    assertAllowed(url)
+    const response = await http.request(url)
     const text = await response.text()
     try { return { status: response.status, data: JSON.parse(text) } } catch { return { status: response.status, data: null } }
   })
   ipcMain.handle('bilihub:bili:text', async (_event, url) => {
-    const response = await sessionFetch(url)
-    return response.text()
+    assertAllowed(url)
+    return http.getText(url)
   })
-  // 写操作（发弹幕、点赞等）：显式带 Cookie + csrf
-  ipcMain.handle('bilihub:bili:post', async (_event, { url, body, contentType }) => {
-    const target = new URL(url)
-    if (!API_HOSTS.includes(target.hostname)) throw new Error(`Domain not allowed: ${target.hostname}`)
-    const cookie = await auth.cookieHeader()
-    const csrf = await auth.csrfToken()
-    const payload = new URLSearchParams(body ?? {})
-    if (csrf) payload.set('csrf', csrf)
-    if (!csrf) return { status: 403, data: { code: -111, message: '未登录，缺少 csrf token' } }
-    const response = await session.fromPartition('persist:bilihub').fetch(url, {
-      method: 'POST',
-      headers: {
-        'User-Agent': UA,
-        Referer: REFERER,
-        Origin: 'https://www.bilibili.com',
-        Cookie: cookie,
-        'Content-Type': contentType || 'application/x-www-form-urlencoded',
-      },
-      body: payload.toString(),
-    })
-    const text = await response.text()
-    try { return { status: response.status, data: JSON.parse(text) } } catch { return { status: response.status, data: null } }
+  // 写操作（发弹幕、点赞等）：postForm 内部会补 Cookie 与 csrf
+  ipcMain.handle('bilihub:bili:post', async (_event, { url, body }) => {
+    assertAllowed(url)
+    const data = await http.postForm(url, body ?? {})
+    // postForm 在缺少 csrf 时直接返回业务错误码，这里统一成与读接口相同的返回形状
+    return { status: data.code === -111 ? 403 : 200, data }
   })
 
   // ---- 页面请求捕获（替代自行实现 WBI 签名）----
@@ -99,6 +81,34 @@ function setupIpc({ getWindow, getUiWindow, storage }) {
   ipcMain.handle('bilihub:capture:cached', (_event, pattern) => capture.cached(pattern))
   ipcMain.handle('bilihub:capture:page', (_event, options) => capture.captureViaPage(options))
   ipcMain.handle('bilihub:capture:clear', () => capture.clear())
+
+  // 空间资料（含空间装扮）：acc/info 需要 WBI 签名，直接捕获空间页自身的请求
+  ipcMain.handle('bilihub:space:profile', async (_event, mid) => {
+    if (!mid) return null
+    try {
+      const record = await capture.captureViaPage({
+        pageUrl: `https://space.bilibili.com/${mid}`,
+        pattern: '/x/space/wbi/acc/info',
+        timeoutMs: 20000,
+      })
+      const data = record?.json?.data
+      if (!data) return null
+      return {
+        mid: data.mid,
+        name: data.name,
+        face: data.face,
+        sign: data.sign ?? '',
+        level: data.level ?? 0,
+        birthday: data.birthday ?? '',
+        pendant: data.pendant?.image ? { name: data.pendant.name ?? '', image: data.pendant.image_enhance || data.pendant.image } : null,
+        nameplate: data.nameplate?.image ? { name: data.nameplate.name ?? '', image: data.nameplate.image } : null,
+        vip: data.vip ?? null,
+        official: data.official ?? null,
+      }
+    } catch (error) {
+      return { error: String(error?.message ?? error) }
+    }
+  })
 
   ipcMain.handle('bilihub:auth:status', () => auth.getStatus())
   ipcMain.handle('bilihub:auth:login', async () => {

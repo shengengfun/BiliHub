@@ -1,0 +1,87 @@
+/* 由 tools/gen-tokens.mjs 生成，请勿手改 —— 改 specs/design-map.json 后重新运行 */
+:root {
+  /* bili_mine_main_style_white · 我的页正文 */
+  --bh-text-primary: #212121ff;
+  /* bili_mine_guide_title_style_white · 分组标题 */
+  --bh-text-section: #212121ff;
+  /* bili_mine_guide_title_arrow_style_white · 分组箭头 */
+  --bh-text-arrow: #999999ff;
+  /* bili_mine_guide_title_bg_style_white · 分组标题底色 */
+  --bh-section-bg: #f4f4f4ff;
+  /* bili_mine_divider_style_white · 列表分隔线 */
+  --bh-divider: #e7e7e7ff;
+  /* bili_mine_avatar_border · 头像白描边 */
+  --bh-avatar-border: #ffffffff;
+  /* bili_mine_lv_senior_entrance_bg_style_white · 等级入口底色 */
+  --bh-entrance-bg: #f1f2f3ff;
+  /* bilipay_theme_color_navigation_profilecover · 顶部封面主题色 */
+  --bh-theme-cover: #f0486c99;
+  /* danmaku_setting_button_bg · 弹幕设置面板底 */
+  --bh-dm-panel-bg: #2f2f2fff;
+  /* danmaku_setting_seekbar_unreached · 滑块未到达段 */
+  --bh-dm-seek-unreached: #838383ff;
+  /* danmaku_settings_action_text · 弹幕面板文字 */
+  --bh-dm-action-text: #c9ccd0ff;
+  /* danmaku_settings_divider · 弹幕面板分隔线 */
+  --bh-dm-divider: #2f3238b2;
+  /* 实测 · 选中态主色，取自 tab bar 选中色 */
+  --bh-brand: #ff6699;
+  /* 实测 · 页面底色，截图实测 */
+  --bh-page-bg: #f1f2f4;
+  /* 实测 · 卡片 / 面板底色 */
+  --bh-surface: #ffffff;
+  /* 实测 · 次级文字，未选中态颜色 */
+  --bh-text-secondary: #61666d;
+  /* 实测 · 辅助文字 */
+  --bh-text-tertiary: #9499a0;
+  /* 实测 · 点赞徽章文字 */
+  --bh-warn: #f06b40;
+  /* 实测 · 点赞徽章底色 */
+  --bh-warn-bg: #fff1ee;
+  /* 实测 · 顶栏 152 设备像素 ÷ 2.188 */
+  --bh-topbar-h: 70px;
+  /* 实测 · 底栏 133 ÷ 2.188 */
+  --bh-tabbar-h: 61px;
+  /* 实测 · 底栏项宽 360 ÷ 2.188 */
+  --bh-tabbar-item-w: 164px;
+  /* 实测 · 信息流左右边距 56 ÷ 2.188 */
+  --bh-feed-pad-x: 26px;
+  /* 实测 · 信息流上边距 36 ÷ 2.188 */
+  --bh-feed-pad-y: 16px;
+  /* 实测 · 卡片间距 36 ÷ 2.188 */
+  --bh-feed-gap: 16px;
+  /* 实测 · 卡片正文 196 ÷ 2.188 */
+  --bh-card-body-h: 90px;
+  /* 实测 · 左栏 637 ÷ 2.188（布局权重 1:3，左栏占 1/4） */
+  --bh-mine-left-w: 291px;
+  /* 实测 · 右栏头部 162 ÷ 2.188 */
+  --bh-mine-head-h: 74px;
+  /* 实测 · 设置行 96 ÷ 2.188 */
+  --bh-mine-row-h: 44px;
+  /* 实测 · 设置分组间隔 23 ÷ 2.188 */
+  --bh-mine-row-gap: 10px;
+  /* 实测 · 聊天行 153 ÷ 2.188 */
+  --bh-mine-chat-h: 70px;
+  /* 实测 · 快捷入口行 195 ÷ 2.188 */
+  --bh-mine-shortcut-h: 89px;
+  /* 实测 · 动态页内容宽 1690 ÷ 2.188 */
+  --bh-dynamic-content-w: 772px;
+  /* 实测 · 动态页左栏 418 ÷ 2.188 */
+  --bh-dynamic-list-w: 191px;
+  /* 实测 · 动态页右栏 1270 ÷ 2.188 */
+  --bh-dynamic-feed-w: 580px;
+  /* 实测 · 播放页侧栏 840 ÷ 2.188 */
+  --bh-player-side-w: 384px;
+  /* player_bottom_controller_bar_layout_height */
+  --bh-player-bar-h: 50px;
+  /* player_bottom_controller_pannel_layout_height */
+  --bh-player-panel-h: 85px;
+  /* player_button_height_normal */
+  --bh-player-btn-h: 32px;
+  /* player_controller_bar_button_layout_width */
+  --bh-player-btn-w: 64px;
+  /* player_danmaku_option_landscape_height */
+  --bh-dm-panel-h-land: 209px;
+  /* player_danmaku_option_vertical_height */
+  --bh-dm-panel-h-port: 333px;
+}

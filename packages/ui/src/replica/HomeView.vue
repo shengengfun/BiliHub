@@ -1,9 +1,12 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fetchHotWords, fetchPopular, fetchRanking, formatCount, formatDuration, formatShort, mediaUrl } from '../bili.js'
+import { fetchHotWords, fetchPlayUrl, fetchPopular, fetchRanking, fetchVideo, formatCount, formatDuration, formatShort, mediaUrl } from '../bili.js'
 import { brand } from '../brand.js'
 import { fallbackHotWords, topIcons } from '../mock.js'
 import { user, login, refreshUser, authSupported, startUserSync } from '../user.js'
+import { api } from '../api.js'
+import { openMenu } from '../context-menu.js'
+import UserAvatar from './UserAvatar.vue'
 
 const emit = defineEmits(['play'])
 const toast = ref('')
@@ -71,6 +74,70 @@ function notify(message) {
   notify.timer = window.setTimeout(() => { toast.value = '' }, 2600)
 }
 
+const videoUrl = (bvid) => `https://www.bilibili.com/video/${bvid}`
+
+/** 桌面语义：Ctrl/⌘ + 点击在新窗口打开；Enter 等同单击 */
+function onCardClick(event, item) {
+  if (event.ctrlKey || event.metaKey) {
+    api.openBilibili(videoUrl(item.bvid))
+    return
+  }
+  emit('play', item)
+}
+
+/** 返回顶部，对应 Ctrl+Home / Home */
+function onKeyNav(event) {
+  if (event.key === 'Home' && !event.ctrlKey) {
+    document.querySelector('.rp-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+/** 桌面端右键菜单：不改动原包外观，但把常用操作从「多点一步」变成「一点」 */
+function onCardContext(event, item) {
+  openMenu(event, [
+    { label: '播放', action: () => emit('play', item) },
+    { label: '在浏览器中打开', action: () => api.openBilibili(videoUrl(item.bvid)) },
+    { label: '复制视频链接', action: () => copy(videoUrl(item.bvid), '链接已复制') },
+    { label: '复制标题', action: () => copy(item.title, '标题已复制') },
+    { divider: true },
+    { label: '下载视频', action: () => downloadVideo(item) },
+    { label: '下载封面', action: () => downloadCover(item) },
+    { divider: true },
+    { label: '不感兴趣', danger: true, action: () => {
+      videos.value = videos.value.filter((video) => video.bvid !== item.bvid)
+      notify('已减少此类内容推荐')
+    } },
+  ])
+}
+
+async function copy(text, message) {
+  try {
+    await navigator.clipboard.writeText(text)
+    notify(message)
+  } catch {
+    notify(text)
+  }
+}
+
+async function downloadVideo(item) {
+  notify('正在解析下载地址…')
+  try {
+    const play = await fetchPlayUrl(item.bvid, (await fetchVideo(item.bvid)).cid, { qn: 80, fnval: 0 })
+    const direct = play.kind === 'durl' ? play.urls[0] : play.videos?.[0]?.url
+    if (!direct) throw new Error('没有可用的下载直链')
+    await api.createDownload({ type: 'video', url: direct, title: item.title, filename: `${item.title}.mp4`, bvid: item.bvid })
+    notify('已加入下载队列')
+  } catch (e) {
+    notify(`下载失败：${e.message}`)
+  }
+}
+
+async function downloadCover(item) {
+  if (!item.cover) return
+  await api.createDownload({ type: 'cover', url: item.cover, title: `${item.title}-封面`, filename: `${item.title}-封面.jpg` })
+  notify('封面已加入下载队列')
+}
+
 /** 未登录时点击头像发起登录（依赖桌面客户端的持久会话） */
 async function onAvatar() {
   if (user.value.isLogin) return
@@ -91,18 +158,24 @@ onMounted(() => {
   hotTimer = window.setInterval(() => {
     hotIndex.value = (hotIndex.value + 1) % hotWords.value.length
   }, 4000)
+  window.addEventListener('keydown', onKeyNav)
 })
-onBeforeUnmount(() => window.clearInterval(hotTimer))
+onBeforeUnmount(() => {
+  window.clearInterval(hotTimer)
+  window.removeEventListener('keydown', onKeyNav)
+})
 watch(activeTab, (tab) => load(tab))
 </script>
 
 <template>
   <header class="rp-top">
     <button class="rp-avatar-btn" title="账号" @click="onAvatar">
-      <img
-        class="rp-avatar"
-        :src="user.isLogin && user.face ? mediaUrl(user.face) : brand('ic-avatar.png')"
-        :alt="user.isLogin ? user.name : '未登录'"
+      <UserAvatar
+        :src="user.isLogin ? user.face : ''"
+        :pendant="user.isLogin ? user.pendant : null"
+        :vip-icon="user.isLogin ? user.avatarIcon : ''"
+        :guest="!user.isLogin"
+        :size="39"
       />
     </button>
     <label class="rp-search">
@@ -122,9 +195,20 @@ watch(activeTab, (tab) => load(tab))
     <div v-else-if="error" class="rp-state rp-state-error">{{ error }}</div>
     <div v-else-if="!videos.length" class="rp-state">暂时没有内容</div>
     <div v-else class="rp-feed">
-      <article v-for="item in videos" :key="item.bvid" class="rp-card" @click="emit('play', item)">
+      <article
+        v-for="item in videos"
+        :key="item.bvid"
+        class="rp-card"
+        tabindex="0"
+        @click="onCardClick($event, item)"
+        @keydown.enter.prevent="emit('play', item)"
+        @contextmenu="onCardContext($event, item)"
+      >
         <div class="rp-cover">
           <img class="rp-cover-img" :src="mediaUrl(item.cover)" :alt="item.title" loading="lazy" />
+          <div class="rp-cover-play">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.5 21 12 6 20.5z" /></svg>
+          </div>
           <div class="rp-cover-meta">
             <span class="rp-cover-stat">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5 20.5 12 4 20.5z" /></svg>{{ formatCount(item.view) }}

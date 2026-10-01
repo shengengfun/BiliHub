@@ -5,9 +5,32 @@ import { api } from './api.js'
 export const user = ref({ isLogin: false })
 export const authSupported = api.hasAuth
 
+/** 空间装扮只在进入「我的」页时补一次，避免每次轮询都开隐藏窗口 */
+let spaceEnriched = false
+
+/**
+ * 空间页的 acc/info 里带着空间装扮与铭牌，比 nav 更全；
+ * 拿不到就沿用 nav 的数据，不影响使用。
+ */
+async function enrichFromSpace() {
+  if (spaceEnriched || !user.value.isLogin || !user.value.mid) return
+  spaceEnriched = true
+  const profile = await api.spaceProfile(user.value.mid)
+  if (!profile || profile.error || !user.value.isLogin) return
+  user.value = {
+    ...user.value,
+    pendant: profile.pendant ?? user.value.pendant,
+    nameplate: profile.nameplate ?? user.value.nameplate,
+    sign: profile.sign ?? '',
+    dynamicCount: profile.dynamicCount ?? user.value.dynamicCount,
+  }
+}
+
 export async function refreshUser() {
   const result = await api.auth.status()
+  if (result?.isLogin && !user.value.isLogin) spaceEnriched = false
   user.value = result ?? { isLogin: false }
+  if (user.value.isLogin) void enrichFromSpace()
   return user.value
 }
 
