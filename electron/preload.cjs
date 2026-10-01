@@ -5,6 +5,11 @@ contextBridge.exposeInMainWorld('bilihubNative', {
   screenshot: () => ipcRenderer.invoke('bilihub:window:screenshot'),
   platform: () => ipcRenderer.invoke('bilihub:platform'),
   download: (payload) => ipcRenderer.invoke('bilihub:download', payload),
+  storage: {
+    get: (key) => ipcRenderer.invoke('bilihub:storage:get', key),
+    set: (key, value) => ipcRenderer.invoke('bilihub:storage:set', key, value),
+    delete: (key) => ipcRenderer.invoke('bilihub:storage:delete', key),
+  },
 })
 
 const toolbarStyle = `
@@ -34,3 +39,19 @@ function installToolbar() {
 }
 
 window.addEventListener('DOMContentLoaded', installToolbar, { once: true })
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const runtimePath = require('node:path').resolve(__dirname, '../packages/runtime/dist/install.js')
+    const { pathToFileURL } = require('node:url')
+    const modulesPath = require('node:path').resolve(__dirname, '../packages/modules/dist/index.js')
+    const { installRuntime } = await import(pathToFileURL(runtimePath).href)
+    const { ambientLight, customNavbar, darkMode } = await import(pathToFileURL(modulesPath).href)
+    await installRuntime({
+      get: (key) => window.bilihubNative.storage.get(key),
+      set: (key, value) => window.bilihubNative.storage.set(key, value),
+    }, [ambientLight, darkMode, customNavbar])
+  } catch (error) {
+    console.error('[BiliHub] runtime install failed', error)
+  }
+}, { once: true })
