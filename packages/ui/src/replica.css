@@ -140,8 +140,8 @@
 
 /* 播放页 */
 .rp-player { display: flex; height: 100vh; overflow: hidden; background: #000; color: var(--rp-text); }
-.rp-player-video { flex: 1; min-width: 0; display: grid; place-items: center; background: #000; position: relative; }
-.rp-player-stage { position: relative; height: 100%; aspect-ratio: 9 / 16; max-width: 100%; background: linear-gradient(160deg, #3a3f47, #22262c); display: grid; place-items: center; }
+.rp-player-video { flex: 1; min-width: 0; display: flex; background: #000; position: relative; }
+.rp-player-stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; background: #000; }
 .rp-player-watermark { position: absolute; top: 16px; left: 18px; color: rgba(255,255,255,.75); font-size: 13px; letter-spacing: .5px; }
 .rp-player-side { width: 620px; flex: none; background: var(--rp-bg); display: flex; flex-direction: column; overflow: auto; }
 .rp-player-tabs { display: flex; gap: 26px; padding: 14px 22px 0; border-bottom: 1px solid var(--rp-line); }
@@ -221,6 +221,89 @@
 .rp-rec-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .rp-rec-item { cursor: pointer; }
 .rp-rec-item:hover h6 { color: var(--rp-pink); }
+
+/* 顶部/底部固定弹幕 */
+.rp-danmaku.fixed { left: 50%; transform: translateX(-50%); animation: none; }
+.rp-danmaku.bottom { top: auto; bottom: 8%; }
+
+/* 播放器控制层：尺寸取自原包 bili_player_controller_half_screen */
+.rp-ctl { position: absolute; inset: 0; z-index: 3; }
+.rp-ctl-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex; align-items: center; gap: 10px;
+  height: 44px;
+  margin-top: 44px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .55), transparent);
+}
+.rp-ctl-back {
+  width: 32px; height: 32px;
+  margin-left: 7px;
+  padding: 5px;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  display: grid; place-items: center;
+}
+.rp-ctl-back:hover { background: rgba(255, 255, 255, .16); }
+.rp-ctl-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-size: 14px; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); }
+.rp-ctl-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center;
+  margin-bottom: 34px;
+  padding: 0 14px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, .55), transparent);
+}
+.rp-ctl-play { padding: 12px; background: transparent; display: grid; place-items: center; }
+.rp-ctl-play img { width: 26px; height: 26px; display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.rp-ctl-seek { position: relative; flex: 1; height: 2px; margin: 0 10px; cursor: pointer; }
+.rp-ctl-seek::before { content: ''; position: absolute; inset: -9px 0; }
+.rp-ctl-seek-track { position: absolute; inset: 0; border-radius: 2px; background: #838383; }
+.rp-ctl-seek-played { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 2px; background: var(--rp-pink); }
+.rp-ctl-seek-thumb { position: absolute; top: 50%; width: 11px; height: 11px; margin-left: -5px; border-radius: 50%; background: #fff; transform: translateY(-50%); box-shadow: 0 1px 4px rgba(0, 0, 0, .5); }
+.rp-ctl-time { color: #fff; font-size: 12px; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); white-space: nowrap; }
+.rp-ctl-icon { padding: 8px; margin-left: 4px; background: transparent; display: grid; place-items: center; }
+.rp-ctl-icon:first-of-type { margin-left: 24px; }
+.rp-ctl-icon:last-of-type { margin-right: 13px; }
+.rp-ctl-icon img { width: 22px; height: 22px; display: block; opacity: .95; }
+.rp-ctl-icon:hover img { opacity: 1; }
+
+/* 弹幕设置面板：配色取自原包 danmaku_setting_* */
+.rp-dm-panel {
+  position: absolute;
+  right: 18px;
+  bottom: 78px;
+  width: 300px;
+  padding: 14px 16px 16px;
+  border-radius: 8px;
+  background: rgba(47, 47, 47, .96);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .45);
+  color: #c9ccd0;
+  font-size: 12px;
+}
+.rp-dm-group + .rp-dm-group { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(47, 50, 56, .7); }
+.rp-dm-label { margin-bottom: 10px; color: #c9ccd0; font-size: 12px; }
+.rp-dm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rp-dm-item {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 9px 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .06);
+  color: #838383;
+  font-size: 11px;
+}
+.rp-dm-item img { width: 22px; height: 22px; opacity: .55; }
+.rp-dm-item.on { background: rgba(255, 102, 153, .18); color: var(--rp-pink); }
+.rp-dm-item.on img { opacity: 1; }
+.rp-dm-slider { display: flex; align-items: center; gap: 9px; padding: 6px 0; }
+.rp-dm-slider span { width: 56px; flex: none; color: #c9ccd0; }
+.rp-dm-slider input { flex: 1; accent-color: var(--rp-pink); }
+.rp-dm-slider em { width: 44px; flex: none; color: #838383; font-style: normal; text-align: right; }
+
 
 /* 复刻界面 与 功能面板 的切换 */
 .rp-devbar {

@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { dynamics, dynamicUsers } from '../mock.js'
 
+// 该页当前为静态数据；动态流接口需 WBI 签名，按 guide 约定不自行实现
+defineEmits(['play'])
+
 const activeTop = ref('综合')
 const activeUser = ref('全部动态')
 </script>

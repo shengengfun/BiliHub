@@ -64,3 +64,61 @@ APK 内嵌 `assets/appbase_1661149883752.zip`，包含：
 | B 站 HTTP | `bilihub:http:request`，仅允许 B 站域名 |
 
 这份映射只复现可观察的交互边界，不复制 appbase 的实现、资源或私有协议。
+
+## 播放器控制栏（实测规格）
+
+来源：`layout/bili_player_controller_half_screen = res/92B.xml`
+
+层级与尺寸：
+
+```
+PlayerInsetControllerWidget
+├── RelativeLayout            高 44dp，marginTop 44dp（顶部栏）
+│   └── PlayerBackWidget      32dp × 32dp，padding 5dp，marginStart 7dp
+└── LinearLayout              marginBottom 34dp（底部栏，横向居中）
+    ├── PlayerPlayPauseWidget  padding 12dp
+    ├── HighEnergySeekWidget   layout_weight 1，高度 2dp
+    ├── PlayerProgressTextWidget  textSize 12dp
+    └── PlayerFullscreenWidget    marginStart 24dp，marginEnd 13dp
+```
+
+配色（原包 color 资源）：
+
+| 名称 | 值 |
+| --- | --- |
+| `danmaku_setting_button_bg` | `#ff2f2f2f` |
+| `danmaku_setting_seekbar_unreached` | `#ff838383` |
+| `danmaku_settings_action_text` | `#ffc9ccd0` |
+| `danmaku_settings_divider` | `#b22f3238` |
+| `danmaku_input_background` | `#ff0c0c0c` / `#ffffffff` |
+| 选中态主色（tab bar） | `#ff6699` |
+| 未选中态 | `#61666d` |
+
+## 控件图标（已提取并转为 SVG）
+
+| 资源名 | 用途 |
+| --- | --- |
+| `bili_player_play_can_play` / `_can_pause` | 播放 / 暂停 |
+| `bili_player_ctrl_play_previous` / `_next` | 上一个 / 下一个 |
+| `biliplayer_ic_danmaku_on` / `_off` | 弹幕开关 |
+| `biliplayer_ic_danmaku_setting` | 弹幕设置入口 |
+| `biliplayer_ic_danmaku_mode_move` / `_top` / `_bottom` | 弹幕类型筛选 |
+| `biliplayer_ic_danmaku_shield_move` / `_top` / `_bottom` / `_same` / `_color` / `_senior` | 屏蔽类型 |
+| `bili_player_ctrl_right` | 全屏 |
+| `ic_vector_tab_bar_{home,moments,mine}_{default,selected}_hd` | 底部导航（平板变体） |
+| `ic_mine_{offline,history,favorite,watchlater,setting,...}` | 我的页菜单 |
+
+## 应用层数据来源实测
+
+无需登录即可访问：
+
+| 接口 | 作用 |
+| --- | --- |
+| `/x/web-interface/popular` | 首页推荐流 |
+| `/x/web-interface/ranking/v2?rid=` | 分区排行榜 |
+| `/x/web-interface/view?bvid=` | 视频详情与 cid |
+| `/x/player/playurl?fnval=0` | 返回 **MP4 直链**（720p，支持 Range） |
+| `/x/v1/dm/list.so?oid=` | 弹幕 XML |
+
+`fnval=0` 返回 MP4 直链，因此不需要 MSE 拼装 DASH，`<video>` 可直接播放并支持拖动。
+需要 WBI 签名的接口（动态流等）按 guide 约定不自行实现，应改为拦截页面已有请求。

@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { chatList, messageShortcuts, mineMenus, settingsItems } from '../mock.js'
 import { brand } from '../brand.js'
 
+defineEmits(['play'])
+
 const section = ref('消息')
 const activeMenu = ref('我的消息')
 </script>
