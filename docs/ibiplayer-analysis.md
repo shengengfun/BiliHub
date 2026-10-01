@@ -42,3 +42,25 @@
 - 私有播放器 native 库
 - 私有接口签名和 DRM 密钥流程
 - APK 内置图片、字体、动画和品牌资源
+
+## appbase 观察
+
+APK 内嵌 `assets/appbase_1661149883752.zip`，包含：
+
+- `shell.html`
+- `service.base.js`
+- `vue.runtime.js`
+- `version.sapp`
+
+这表明部分扩展界面使用 Vue shell，通过 `callNative` / `callNativeSync` 访问原生服务。BiliHub 对应采用安全的 `contextBridge`，不暴露原始 IPC：
+
+| appbase 能力 | BiliHub 边界 |
+| --- | --- |
+| 系统信息 | `bilihub:platform` |
+| 设置读写 | `bilihub:storage:get/set/delete` |
+| 页面打开 | `bilihub:window:open-bilibili` |
+| 下载 | `bilihub:download` |
+| 截图 | `bilihub:window:screenshot` / `bilihub:download:save-data` |
+| B 站 HTTP | `bilihub:http:request`，仅允许 B 站域名 |
+
+这份映射只复现可观察的交互边界，不复制 appbase 的实现、资源或私有协议。
