@@ -1,10 +1,9 @@
 {
-  "name": "@bilihub/runtime",
+  "name": "@bilihub/modules",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": { "types": "./src/index.ts", "import": "./src/index.ts" } },
   "scripts": { "typecheck": "tsc -p tsconfig.json --noEmit" },
-  "dependencies": { "@bilihub/shared": "workspace:*" },
+  "dependencies": { "@bilihub/runtime": "workspace:*", "@bilihub/shared": "workspace:*" },
   "devDependencies": { "typescript": "^5.7.3" }
 }
