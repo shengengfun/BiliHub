@@ -6,6 +6,14 @@ function setupIpc({ getWindow, storage }) {
   ipcMain.handle('bilihub:storage:set', (_event, key, value) => storage.set(key, value))
   ipcMain.handle('bilihub:storage:delete', (_event, key) => storage.delete(key))
   ipcMain.handle('bilihub:platform', () => ({ platform: process.platform, drm: process.platform === 'win32', touch: false }))
+  ipcMain.handle('bilihub:http:request', async (_event, options) => {
+    const url = new URL(options.url)
+    const allowed = ['bilibili.com', 'biliapi.net', 'hdslb.com']
+    if (!allowed.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`))) throw new Error(`Domain not allowed: ${url.hostname}`)
+    const response = await session.fromPartition('persist:bilihub').fetch(options.url, { method: options.method ?? 'GET', headers: options.headers, body: options.body })
+    const data = options.responseType === 'text' ? await response.text() : await response.json()
+    return { status: response.status, data }
+  })
   ipcMain.handle('bilihub:window:open-bilibili', () => getWindow()?.loadURL('https://www.bilibili.com/'))
   ipcMain.handle('bilihub:window:screenshot', async () => {
     const window = getWindow(); if (!window) return false
