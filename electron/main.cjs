@@ -25,7 +25,7 @@ function installRequestFilter() {
 function createWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 1024, minHeight: 680, backgroundColor: '#111317', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, partition: 'persist:bilihub' } })
   installRequestFilter()
-  mainWindow.loadURL('http://127.0.0.1:5173/')
+  mainWindow.loadURL('https://www.bilibili.com/')
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { if (url.startsWith('https://www.bilibili.com')) mainWindow.loadURL(url); return { action: 'deny' } })
   globalShortcut.register('CommandOrControl+Shift+S', () => captureWindow())
 }

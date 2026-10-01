@@ -6,3 +6,31 @@ contextBridge.exposeInMainWorld('bilihubNative', {
   platform: () => ipcRenderer.invoke('bilihub:platform'),
   download: (payload) => ipcRenderer.invoke('bilihub:download', payload),
 })
+
+const toolbarStyle = `
+  #bilihub-toolbar { position: fixed; right: 24px; bottom: 24px; z-index: 2147483647; display: flex; gap: 6px; padding: 7px; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; background: rgba(20,22,28,.94); box-shadow: 0 8px 30px rgba(0,0,0,.28); backdrop-filter: blur(16px); font: 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  #bilihub-toolbar button { padding: 7px 10px; border: 0; border-radius: 5px; background: transparent; color: #dfe3ea; cursor: pointer; }
+  #bilihub-toolbar button:hover, #bilihub-toolbar button.active { background: #fb7299; color: white; }
+`
+
+function installToolbar() {
+  if (document.getElementById('bilihub-toolbar')) return
+  const style = document.createElement('style')
+  style.textContent = toolbarStyle
+  document.head.appendChild(style)
+  const toolbar = document.createElement('div')
+  toolbar.id = 'bilihub-toolbar'
+  toolbar.innerHTML = '<button data-action="clean">✦ 去广告</button><button data-action="danmaku">≋ 弹幕</button><button data-action="download">↓ 下载</button><button data-action="capture">▣ 截图</button>'
+  toolbar.addEventListener('click', async (event) => {
+    const button = event.target.closest('button')
+    if (!button) return
+    const action = button.dataset.action
+    if (action === 'capture') await window.bilihubNative.screenshot()
+    if (action === 'download') await window.bilihubNative.download({ filename: `bilihub-${Date.now()}.bin` })
+    if (action === 'danmaku') { document.body.classList.toggle('bilihub-danmaku-off'); button.classList.toggle('active') }
+    if (action === 'clean') { document.body.classList.toggle('bilihub-clean-on'); button.classList.toggle('active') }
+  })
+  document.body.appendChild(toolbar)
+}
+
+window.addEventListener('DOMContentLoaded', installToolbar, { once: true })
