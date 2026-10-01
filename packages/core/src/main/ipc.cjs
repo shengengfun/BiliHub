@@ -13,6 +13,13 @@ function setupIpc({ getWindow, storage }) {
     if (result.canceled || !result.filePath) return false
     fs.writeFileSync(result.filePath, image.toPNG()); return true
   })
+  ipcMain.handle('bilihub:download:save-data', async (_event, { dataUrl, filename }) => {
+    const window = getWindow(); if (!window || typeof dataUrl !== 'string') return false
+    const result = await dialog.showSaveDialog(window, { defaultPath: filename || `bilihub-${Date.now()}.png`, filters: [{ name: 'PNG image', extensions: ['png'] }] })
+    if (result.canceled || !result.filePath) return false
+    fs.writeFileSync(result.filePath, Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64'))
+    return true
+  })
   ipcMain.handle('bilihub:download', async (_event, { url, filename }) => {
     if (!url) return { queued: true, filename }
     const ses = session.fromPartition('persist:bilihub')

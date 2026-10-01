@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('bilihubNative', {
   screenshot: () => ipcRenderer.invoke('bilihub:window:screenshot'),
   platform: () => ipcRenderer.invoke('bilihub:platform'),
   download: (payload) => ipcRenderer.invoke('bilihub:download', payload),
+  saveData: (payload) => ipcRenderer.invoke('bilihub:download:save-data', payload),
   storage: {
     get: (key) => ipcRenderer.invoke('bilihub:storage:get', key),
     set: (key, value) => ipcRenderer.invoke('bilihub:storage:set', key, value),
@@ -46,12 +47,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     const { pathToFileURL } = require('node:url')
     const modulesPath = require('node:path').resolve(__dirname, '../packages/modules/dist/index.js')
     const { installRuntime } = await import(pathToFileURL(runtimePath).href)
-    const { ambientLight, customNavbar, darkMode, adBlock, danmakuEnhance, commentsEnhance, screenshot, sponsorSkip } = await import(pathToFileURL(modulesPath).href)
+    const { ambientLight, customNavbar, darkMode, adBlock, danmakuEnhance, commentsEnhance, screenshot, sponsorSkip, shortcuts, liveEnhance, videoTools, download } = await import(pathToFileURL(modulesPath).href)
     await installRuntime({
       get: (key) => window.bilihubNative.storage.get(key),
       set: (key, value) => window.bilihubNative.storage.set(key, value),
-    }, [adBlock, ambientLight, danmakuEnhance, darkMode, customNavbar, commentsEnhance, screenshot, sponsorSkip])
+    }, [adBlock, ambientLight, danmakuEnhance, darkMode, customNavbar, commentsEnhance, screenshot, sponsorSkip, shortcuts, liveEnhance, videoTools, download])
   } catch (error) {
     console.error('[BiliHub] runtime install failed', error)
   }
 }, { once: true })
+
+window.addEventListener('bilihub:screenshot:ready', (event) => {
+  const dataUrl = event.detail
+  if (typeof dataUrl === 'string') window.bilihubNative.saveData({ dataUrl, filename: `bilihub-${Date.now()}.png` })
+})
