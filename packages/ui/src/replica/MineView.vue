@@ -1,11 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { chatList, messageShortcuts, mineMenus, settingsItems } from '../mock.js'
 import { brand, brandIcon } from '../brand.js'
 import { formatCount } from '../bili.js'
 import { user, login, refreshUser, logout, authSupported, startUserSync } from '../user.js'
 import { api } from '../api.js'
-import { mineGuestStatus } from '../tokens.js'
+import { mineGuestStatus, mineGuestLogin, messageGuestTip, favoriteGuestTip } from '../tokens.js'
 import ExtendPanel from './ExtendPanel.vue'
 import UserAvatar from './UserAvatar.vue'
 
@@ -61,7 +61,9 @@ async function onMenu(label) {
 onMounted(() => {
   refreshUser()
   startUserSync()
+  window.addEventListener('bilihub:refresh', refreshUser)
 })
+onBeforeUnmount(() => window.removeEventListener('bilihub:refresh', refreshUser))
 </script>
 
 <template>
@@ -89,7 +91,7 @@ onMounted(() => {
             </div>
             <img v-if="user.isLogin && user.vipLabelImage" class="rp-vip-label" :src="user.vipLabelImage" :alt="user.vipLabel" />
             <span v-else-if="user.isLogin && user.vip" class="rp-vip" :style="{ background: user.vipBgColor, color: user.vipTextColor }">{{ user.vipLabel || '大会员' }}</span>
-            <div v-else-if="!user.isLogin" class="rp-login-hint" @click="onAccount">点击登录</div>
+            <div v-else-if="!user.isLogin" class="rp-login-hint" @click="onAccount">{{ mineGuestLogin }}</div>
             <div v-if="user.isLogin" class="rp-coins">
               <span>硬币：{{ user.coin }}</span><span>B币：{{ user.bcoin }}</span>
             </div>
@@ -155,6 +157,18 @@ onMounted(() => {
             </div>
           </div>
         </template>
+      </template>
+
+      <!-- 消息：未登录时不能展示聊天列表，改为原包的游客提示 -->
+      <template v-else-if="!user.isLogin">
+        <div class="rp-guest">
+          <div class="rp-guest-icon">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 12.5c0 3.6-3.6 6.5-8 6.5-1 0-2-.15-2.9-.42L4.5 20l1.2-3.3C4.6 15.6 4 14.1 4 12.5 4 8.9 7.6 6 12 6s8 2.9 8 6.5z" /></svg>
+          </div>
+          <p class="rp-guest-text">{{ messageGuestTip }}</p>
+          <p class="rp-guest-sub">{{ favoriteGuestTip }}</p>
+          <button class="rp-guest-btn" @click="onAccount">{{ mineGuestLogin }}</button>
+        </div>
       </template>
 
       <!-- 消息 -->

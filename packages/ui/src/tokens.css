@@ -6,7 +6,7 @@
   --bh-text-section: #212121ff;
   /* bili_mine_guide_title_arrow_style_white · 分组箭头 */
   --bh-text-arrow: #999999ff;
-  /* bili_mine_guide_title_bg_style_white · 分组标题底色 */
+  /* bili_mine_guide_title_bg_style_white · 分组标题底色。资源表里存在，但实机截图上我的页左栏分组标题是纯白底（实测 #ffffff），因此本页不用；保留映射以便其他页面复用 */
   --bh-section-bg: #f4f4f4ff;
   /* bili_mine_divider_style_white · 列表分隔线 */
   --bh-divider: #e7e7e7ff;
@@ -58,6 +58,16 @@
   --bh-mine-head-h: 74px;
   /* 实测 · 设置行 96 ÷ 2.188 */
   --bh-mine-row-h: 44px;
+  /* 实测 · 左栏菜单行距，实测 104/107/112/108 设备像素取均 107.75 ÷ 2.188 */
+  --bh-mine-menu-row-h: 49px;
+  /* 实测 · 左栏分组标题带高，实测 90 设备像素 ÷ 2.188 */
+  --bh-mine-group-title-h: 41px;
+  /* 实测 · 左栏菜单左右内边距，图标左边缘实测 43 设备像素 ÷ 2.188 */
+  --bh-mine-menu-pad-x: 20px;
+  /* 实测 · 左栏菜单图标宽，实测 46 设备像素 ÷ 2.188 */
+  --bh-mine-menu-icon: 21px;
+  /* 实测 · 图标与文字间距，由文字起点 120 设备像素反推 */
+  --bh-mine-menu-gap: 14px;
   /* 实测 · 设置分组间隔 23 ÷ 2.188 */
   --bh-mine-row-gap: 10px;
   /* 实测 · 聊天行 153 ÷ 2.188 */

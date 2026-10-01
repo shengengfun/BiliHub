@@ -35,7 +35,11 @@
 .rp { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--rp-bg-page); color: var(--rp-text); font-size: 14px; }
 .rp, .rp-player { user-select: none; -webkit-user-select: none; }
 .rp ::-webkit-scrollbar { width: 0; height: 0; }
-.rp button, .rp-player button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+/* 用 :where() 让这条重置不产生特异性。
+   否则 `.rp button`（0,1,1）会盖掉 `.rp-guest-btn`（0,1,0）这类单类名按钮样式，
+   表现为按钮变成一行纯文字，排查起来很费时间。 */
+.rp :where(button), .rp-player :where(button) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+.rp button, .rp-player button { cursor: pointer; }
 .rp img, .rp-player img { display: block; }
 
 /* ===== 顶栏：单行白底，高 70，标签绝对居中 ===== */
@@ -78,6 +82,9 @@
 .rp-top-icons { display: flex; align-items: center; gap: 35px; margin-left: auto; }
 .rp-top-icons img { width: 22px; height: 22px; opacity: .78; }
 .rp-top-icons img:hover { opacity: 1; }
+/* 刷新是桌面新增的可见入口，外观与原有图标组保持一致 */
+.rp-icon-btn { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: none; color: var(--bh-text-secondary); opacity: .78; cursor: pointer; }
+.rp-icon-btn:hover { opacity: 1; }
 
 .rp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 80; padding: 10px 18px; border-radius: 6px; background: rgba(0, 0, 0, .78); color: #fff; font-size: 13px; }
 
@@ -164,6 +171,13 @@
 .rp-more { color: var(--rp-text-3); font-size: 15px; line-height: 1; flex: none; }
 .rp-state { padding: 80px 20px; color: var(--rp-text-3); text-align: center; font-size: 13px; }
 .rp-state-error { color: #d9534f; }
+/* 未登录空态：文案取自 APK，图标沿用界面统一的线性风格 */
+.rp-guest { display: flex; flex-direction: column; align-items: center; padding: 96px 20px 40px; text-align: center; }
+.rp-guest-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--bh-section-bg); color: var(--bh-text-tertiary); }
+.rp-guest-text { margin: 18px 0 0; color: var(--bh-text-secondary); font-size: 14px; }
+.rp-guest-sub { margin: 6px 0 0; color: var(--bh-text-tertiary); font-size: 12px; }
+.rp-guest-btn { margin-top: 20px; padding: 8px 30px; border: 0; border-radius: 18px; background: var(--bh-brand); color: #fff; font-size: 13px; cursor: pointer; }
+.rp-guest-btn:hover { filter: brightness(1.06); }
 
 /* ===== 底部导航：白底，居中三项，项宽 164 ===== */
 .rp-tabbar {
@@ -261,11 +275,26 @@
 .rp-menu-group { padding: 0; }
 .rp-menu-group + .rp-menu-group { border-top: 1px solid var(--rp-line-2); }
 /* 分组标题带浅灰底，取值见 bili_mine_guide_title_bg_style_white */
-.rp-menu-group > span { display: block; height: 33px; line-height: 33px; padding: 0 20px; background: var(--bh-section-bg); color: var(--bh-text-section); font-size: 14px; }
-.rp-menu-item { display: flex; align-items: center; gap: 13px; height: 49px; padding: 0 20px; font-size: 15px; cursor: pointer; }
+.rp-menu-group > span {
+  display: block;
+  height: var(--bh-mine-group-title-h);
+  line-height: var(--bh-mine-group-title-h);
+  padding: 0 var(--bh-mine-menu-pad-x);
+  font-size: 14px;
+  color: var(--bh-text-section);
+}
+.rp-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--bh-mine-menu-gap);
+  height: var(--bh-mine-menu-row-h);
+  padding: 0 var(--bh-mine-menu-pad-x);
+  font-size: 15px;
+  cursor: pointer;
+}
 .rp-menu-item:hover { background: #fafbfc; }
 .rp-menu-item.on { color: var(--rp-pink); }
-.rp-menu-item img { width: 22px; height: 22px; flex: none; }
+.rp-menu-item img { width: var(--bh-mine-menu-icon); height: var(--bh-mine-menu-icon); flex: none; }
 .rp-menu-item .arrow { margin-left: auto; color: var(--bh-text-arrow); font-size: 15px; }
 
 /* 右侧头部：标题居中，工具图标靠右 */
@@ -486,16 +515,18 @@
 .t7 { background: linear-gradient(135deg, #d4dde6, #a7b7c6); }
 .t8 { background: linear-gradient(135deg, #e2e4c9, #bfc48f); }
 
-/* 桌面端右键菜单 */
+/* 桌面端右键菜单。
+   注意：这里的项不能叫 .rp-menu-item，那个类名归「我的」页左侧菜单，
+   同名会被后面的规则覆盖掉行高与图标排版。 */
 .rp-menu {
   position: fixed; z-index: 200; min-width: 176px; padding: 6px;
   border-radius: 8px; background: #fff;
   box-shadow: 0 8px 28px rgba(0, 0, 0, .18), 0 0 0 1px rgba(0, 0, 0, .05);
 }
-.rp-menu-item { display: block; width: 100%; padding: 8px 12px; border-radius: 5px; color: var(--rp-text); font-size: 13px; text-align: left; }
-.rp-menu-item:hover { background: var(--rp-group); color: var(--rp-pink); }
-.rp-menu-item.danger { color: #e04a4a; }
-.rp-menu-item.danger:hover { background: #fdeceo; background: #fdeceb; }
+.rp-ctx-item { display: block; width: 100%; padding: 8px 12px; border-radius: 5px; color: var(--rp-text); font-size: 13px; text-align: left; }
+.rp-ctx-item:hover { background: var(--rp-group); color: var(--rp-pink); }
+.rp-ctx-item.danger { color: #e04a4a; }
+.rp-ctx-item.danger:hover { background: #fdeceb; }
 .rp-menu-divider { height: 1px; margin: 5px 8px; background: var(--rp-line); }
 
 /* 桌面端快捷键提示与管理面板 */

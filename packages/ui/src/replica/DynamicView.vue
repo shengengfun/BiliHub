@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { fetchDynamicFeed, formatCount, formatRelative, mediaUrl } from '../bili.js'
 import { api } from '../api.js'
 import UserAvatar from './UserAvatar.vue'
@@ -48,7 +48,8 @@ function openSource(post) {
   api.openBilibili('https://t.bilibili.com/')
 }
 
-onMounted(load)
+onMounted(() => window.addEventListener('bilihub:refresh', load))
+onBeforeUnmount(() => window.removeEventListener('bilihub:refresh', load))
 </script>
 
 <template>

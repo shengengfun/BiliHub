@@ -35,7 +35,7 @@ function run(item) {
   >
     <template v-for="(item, index) in menuState.items" :key="index">
       <div v-if="item.divider" class="rp-menu-divider"></div>
-      <button v-else class="rp-menu-item" :class="{ danger: item.danger }" @click="run(item)">{{ item.label }}</button>
+      <button v-else class="rp-ctx-item" :class="{ danger: item.danger }" @click="run(item)">{{ item.label }}</button>
     </template>
   </div>
 </template>

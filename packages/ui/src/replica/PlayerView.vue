@@ -511,9 +511,39 @@ function onLoadedMetadata() {
   rowBusy.fill(0)
 }
 
+/** 与原包倍速列表保持一致，供 Shift+←/→ 循环使用 */
+const RATE_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+
+/** 快进后退步长；模块设置可覆盖 */
+function seekBy(seconds) {
+  const el = videoEl.value
+  if (!el) return
+  el.currentTime = Math.min(el.duration || Infinity, Math.max(0, el.currentTime + seconds))
+  showToast(`${seconds > 0 ? '快进' : '后退'} ${Math.abs(seconds)} 秒`)
+}
+
+function stepRate(direction) {
+  const index = RATE_STEPS.indexOf(rate.value)
+  const next = RATE_STEPS[Math.min(RATE_STEPS.length - 1, Math.max(0, (index < 0 ? 2 : index) + direction))]
+  setRate(next)
+  showToast(`倍速 ${next}x`)
+}
+
+/** ↑/↓ 与滚轮共用音量通道 */
+function stepVolume(delta) {
+  const el = videoEl.value
+  if (!el) return
+  const next = Math.min(1, Math.max(0, Number((el.volume + delta).toFixed(2))))
+  onVolume(next)
+  showToast(`音量 ${Math.round(next * 100)}%`)
+  pokeControls()
+}
+
 function onKey(event) {
-  if (event.target instanceof HTMLInputElement) return
-  // Esc 与 Alt+← 对应原包的返回手势
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+  if (event.ctrlKey || event.metaKey) return
+
+  // ---- 返回：对应原包的返回手势 ----
   if (event.key === 'Escape') {
     if (document.fullscreenElement) return
     event.preventDefault()
@@ -525,11 +555,82 @@ function onKey(event) {
     emit('close')
     return
   }
-  if (event.code === 'Space') { event.preventDefault(); togglePlay() }
-  else if (event.key === 'f') toggleFullscreen()
-  else if (event.key === 'd') dm.value.on = !dm.value.on
-  else if (event.key === 'm') toggleMute()
+  // Alt+S 截图；其余 Alt 组合不接管
+  if (event.altKey) {
+    if (event.key.toLowerCase() === 's') {
+      event.preventDefault()
+      snapshot()
+    }
+    return
+  }
+
+  switch (event.key) {
+    case ' ':
+    case 'Spacebar':
+    case 'k':
+    case 'K':
+      event.preventDefault()
+      togglePlay()
+      break
+    case 'ArrowLeft':
+      event.preventDefault()
+      event.shiftKey ? stepRate(-1) : seekBy(-5)
+      break
+    case 'ArrowRight':
+      event.preventDefault()
+      event.shiftKey ? stepRate(1) : seekBy(5)
+      break
+    case 'ArrowUp':
+      event.preventDefault()
+      stepVolume(0.05)
+      break
+    case 'ArrowDown':
+      event.preventDefault()
+      stepVolume(-0.05)
+      break
+    case 'm':
+    case 'M':
+      toggleMute()
+      break
+    case 'f':
+    case 'F':
+      toggleFullscreen()
+      break
+    case 'd':
+    case 'D':
+      dm.value.on = !dm.value.on
+      showToast(dm.value.on ? '弹幕已开启' : '弹幕已关闭')
+      break
+    case ',':
+      // 逐帧步进按 30fps 估算，够用且不依赖具体帧率元数据
+      event.preventDefault()
+      seekBy(-1 / 30)
+      break
+    case '.':
+      event.preventDefault()
+      seekBy(1 / 30)
+      break
+    default:
+      // 0-9 跳转到 0% - 90%
+      if (/^[0-9]$/.test(event.key)) {
+        const el = videoEl.value
+        if (el?.duration) {
+          event.preventDefault()
+          el.currentTime = (Number(event.key) / 10) * el.duration
+          showToast(`跳转至 ${Number(event.key) * 10}%`)
+        }
+      }
+      break
+  }
   pokeControls()
+}
+
+/** 鼠标侧键对应 Android 的返回手势 */
+function onMouseButton(event) {
+  if (event.button === 3) {
+    event.preventDefault()
+    emit('close')
+  }
 }
 
 function onFullscreenChange() { fullscreen.value = Boolean(document.fullscreenElement) }
@@ -538,6 +639,7 @@ onMounted(() => {
   load(props.bvid)
   timer = window.setInterval(tick, 100)
   window.addEventListener('keydown', onKey)
+  window.addEventListener('mouseup', onMouseButton)
   document.addEventListener('fullscreenchange', onFullscreenChange)
   pokeControls()
 })
@@ -546,6 +648,7 @@ onBeforeUnmount(() => {
   window.clearInterval(timer)
   window.clearTimeout(hideTimer)
   window.removeEventListener('keydown', onKey)
+  window.removeEventListener('mouseup', onMouseButton)
   document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 

@@ -85,10 +85,19 @@ function onCardClick(event, item) {
   emit('play', item)
 }
 
-/** 返回顶部，对应 Ctrl+Home / Home */
+/** 返回顶部（Home）与卡片聚焦时 Ctrl+C 复制链接；刷新由 Replica.vue 统一派发 */
 function onKeyNav(event) {
   if (event.key === 'Home' && !event.ctrlKey) {
     document.querySelector('.rp-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+    const focused = document.activeElement
+    const bvid = focused?.dataset?.bvid
+    const item = videos.value.find((video) => video.bvid === bvid)
+    if (!item) return
+    event.preventDefault()
+    copy(videoUrl(item.bvid), '链接已复制')
   }
 }
 
@@ -159,10 +168,18 @@ onMounted(() => {
     hotIndex.value = (hotIndex.value + 1) % hotWords.value.length
   }, 4000)
   window.addEventListener('keydown', onKeyNav)
+  window.addEventListener('bilihub:refresh', reload)
 })
-onBeforeUnmount(() => {
+
+/** 下拉刷新在桌面没有等价手势，用 F5 并配一个可见按钮作为发现入口 */
+function reload() {
+  load(activeTab.value)
+  loadHotWords()
+  notify(`已刷新「${activeTab.value}」`)
+}onBeforeUnmount(() => {
   window.clearInterval(hotTimer)
   window.removeEventListener('keydown', onKeyNav)
+  window.removeEventListener('bilihub:refresh', reload)
 })
 watch(activeTab, (tab) => load(tab))
 </script>
@@ -186,6 +203,9 @@ watch(activeTab, (tab) => load(tab))
       <button v-for="tab in navTabs" :key="tab" :class="{ on: activeTab === tab }" @click="activeTab = tab">{{ tab }}</button>
     </nav>
     <div class="rp-top-icons">
+      <button class="rp-icon-btn" title="刷新（F5）" @click="reload">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4.5V11h-6.2" /></svg>
+      </button>
       <img v-for="icon in topIcons" :key="icon" :src="brand(`${icon}.png`)" :alt="icon" />
     </div>
   </header>
@@ -200,6 +220,7 @@ watch(activeTab, (tab) => load(tab))
         :key="item.bvid"
         class="rp-card"
         tabindex="0"
+        :data-bvid="item.bvid"
         @click="onCardClick($event, item)"
         @keydown.enter.prevent="emit('play', item)"
         @contextmenu="onCardContext($event, item)"

@@ -60,31 +60,58 @@ rp-content.rp-dyn-body    内容 772 居中
 布局权重来自 `res/3H_.xml`（`bili_app_fragment_hd_mine`）：左右 **1 : 3**，
 中间夹一条分隔线。换算到 1170 宽即左 291 / 右 868，与实测一致。
 
+### 左栏实测值
+
+测量方式：`tools/measure-mine-left.py` 逐行统计左栏 637 设备像素内的非白像素，
+分隔线取「整行浅灰、几乎没有深色」的行，内容行取「深色像素 > 20 的连续段」。
+
+| 项 | 设备像素 | CSS | 说明 |
+| --- | --- | --- | --- |
+| 左栏宽 | 637 | 291 | 含 1px 右分隔线 |
+| 菜单行距 | 107.75（104/107/112/108 均值） | 49 | 对应 `--bh-mine-menu-row-h` |
+| 分组标题带高 | 90 | 41 | 对应 `--bh-mine-group-title-h` |
+| 图标左边缘 | 43 | 20 | 对应 `--bh-mine-menu-pad-x` |
+| 图标宽 | 46 | 21 | 对应 `--bh-mine-menu-icon` |
+| 文字左边缘 | 120 | 55 | 由 20 + 21 + 间距 14 得到 |
+| 分隔线 | 1px `#e7e7e7` | — | 实测 `(228,230,229)`，取 APK 值 |
+| 账号头像 | 146 | 67 | 圆角 10 |
+
+**分组标题没有灰底。** 资源表里存在 `bili_mine_guide_title_bg_style_white`（`#f4f4f4`），
+但实机截图上标题背后是纯白，因此本页不使用这个色值，只保留映射备用。
+
 ```
 .rp-mine-body
 ├─ .rp-mine-left           左栏 291，白底
 │   ├─ 账号卡              头像 67（圆角 10，带挂件与白描边）+ 昵称 + 等级 + 大会员
 │   ├─ 统计行              动态 / 关注 / 粉丝，数字与文字同一行，组间竖线
 │   ├─ 大会员推广          渐变卡 + 圆形「大」徽章 + 白底按钮
-│   └─ 菜单分组            组标题带 #f4f4f4 灰底（bili_mine_guide_title_bg_style_white）
+│   └─ 菜单分组            组标题高 41，行高 49，图标 21，左右内边距 20
 └─ .rp-mine-right          右栏，头部高 74，标题居中
     ├─ 消息（默认）        快捷入口 89 + 灰带 10 + 聊天列表行 70
     ├─ 设置                行高 44，组间隔 10，右侧箭头 #999999
     └─ 插件 / 模块 / 下载  见 ExtendPanel
 ```
 
-**状态**
+### 未登录（游客）态
 
-| 元素 | 已登录 | 未登录 |
-| --- | --- | --- |
-| 头像 | `nav.face` + `pendant.image` + `vip.avatar_icon` | `bili_nologin_avatar` |
-| 昵称 | `uname`，颜色取 `vip.nickname_color` | `string:mine_not_login_status`（“未登录”） |
-| 等级 | `LVn` 实心徽章 | 不显示 |
-| 大会员 | `vip.label.img_label_uri_hans_static` 图片 | 不显示 |
-| 硬币 / B币 | 显示 | 不显示 |
-| 统计行 | 真实数值 | 三项均为 `—` |
-| 大会员推广 | 显示 | 显示（游客也会看到） |
-| 菜单 | 可点 | 可点；需登录的项点击后拉起登录 |
+原包在未登录时不会展示任何账号数据。各区取值：
+
+| 元素 | 已登录 | 未登录 | 文案来源 |
+| --- | --- | --- | --- |
+| 头像 | `nav.face` + `pendant.image` + `vip.avatar_icon` | `bili_nologin_avatar.png` | APK 位图 |
+| 昵称 | `uname`，颜色取 `vip.nickname_color` | 未登录 | `mine_not_login_status` |
+| 账号行动点 | — | 立即登录 | `login_now` |
+| 等级 | `LVn` 实心徽章 | 不显示 | — |
+| 大会员 | `vip.label.img_label_uri_hans_static` 图片 | 不显示 | — |
+| 硬币 / B币 | 显示 | 不显示 | — |
+| 统计行 | 真实数值 | 三项均为 `—` | — |
+| 大会员推广 | 显示 | **显示**（推广与账号无关） | — |
+| 左栏菜单 | 可点 | 可点；需登录的项点击后拉起登录 | — |
+| 消息区 | 快捷入口 + 聊天列表 | 空态：图标 + 未登录无法查看消息哦 + 登录查看你的收藏哦~ + 立即登录 | `im_commnucatiion_no_login_tip` / `channel_empty_login_default_msg` |
+
+> 这两条 APK 资源只有繁体副本，`design-map.json` 里标了 `"simplify": true`，
+> 由生成器做转换并在产物注释里保留原文，而不是手改生成结果。
+
 
 ---
 

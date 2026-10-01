@@ -24,7 +24,7 @@ function openPlayer(video) {
   if (currentBvid.value) window.scrollTo(0, 0)
 }
 
-/** 桌面端快捷键：数字切页、Ctrl+F 聚焦搜索、F1 打开快捷键说明 */
+/** 桌面端快捷键：数字切页、Ctrl+F 聚焦搜索、F1 快捷键说明、F5 刷新当前页 */
 function onKey(event) {
   const target = event.target
   if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
@@ -33,6 +33,13 @@ function onKey(event) {
   if (event.key === 'F1') {
     event.preventDefault()
     helpOpen.value = !helpOpen.value
+    return
+  }
+  // F5 对应原包的下拉刷新。各页自行监听 bilihub:refresh，
+  // 这样「刷新」只有一套语义，不必每个页面各写一遍键处理。
+  if (event.key === 'F5') {
+    event.preventDefault()
+    window.dispatchEvent(new Event('bilihub:refresh'))
     return
   }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {

@@ -41,13 +41,37 @@ function resolveSize(entry, key) {
   return { value: value, source: entry.apk }
 }
 
+const TRADITIONAL_TO_SIMPLIFIED = {
+  登入: '登录',
+  帳號: '账号',
+  無法: '无法',
+  訊息: '消息',
+  哦: '哦',
+}
+
+/**
+ * APK 里部分资源只带繁体副本（例如 im_commnucatiion_no_login_tip）。
+ * 这里做一次有记录的转换，而不是让人手改生成物。
+ * design-map.json 里写 `"simplify": true` 才会走这条路径。
+ */
+function simplify(text) {
+  let out = text
+  for (const [from, to] of Object.entries(TRADITIONAL_TO_SIMPLIFIED)) out = out.split(from).join(to)
+  return out
+}
+
 function resolveText(entry, key) {
-  const value = tokens.strings?.[entry.apk]
-  if (value === undefined) {
+  const raw = tokens.strings?.[entry.apk]
+  if (raw === undefined) {
     problems.push(`text.${key} 引用了不存在的字符串：${entry.apk}`)
-    return { value: '', source: `缺失(${entry.apk})` }
+    return { value: '', source: `缺失(${entry.apk})`, converted: false }
   }
-  return { value, source: entry.apk }
+  if (!entry.simplify) return { value: raw, source: entry.apk, converted: false }
+  const value = simplify(raw)
+  if (value === raw) {
+    problems.push(`text.${key} 标记了 simplify，但 ${entry.apk} 的值没有变化，请检查映射是否需要保留：${raw}`)
+  }
+  return { value, source: `${entry.apk}（繁体转简体，原文：${raw}）`, converted: value !== raw }
 }
 
 const css = ['/* 由 tools/gen-tokens.mjs 生成，请勿手改 —— 改 specs/design-map.json 后重新运行 */', ':root {']
