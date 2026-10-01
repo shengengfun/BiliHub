@@ -1,5 +1,5 @@
 // B 站页面窗口
-const { BrowserWindow, app } = require('electron')
+const { BrowserWindow } = require('electron')
 const path = require('node:path')
 
 const HOME = 'https://www.bilibili.com/'
@@ -50,15 +50,6 @@ function createMainWindow() {
       partition: 'persist:bilihub',
     },
   })
-
-  // Widevine 的开关必须在页面导航之前设置
-  if (app.isPackaged) {
-    try {
-      window.webContents.session.setPreloads([path.resolve(__dirname, '../../../../electron/preload.cjs')])
-    } catch {
-      /* 忽略 */
-    }
-  }
 
   window.loadURL(HOME)
 
