@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('bilihubUI', {
   listPlugins: () => ipcRenderer.invoke('bilihub:plugins:list'),
   setPluginEnabled: (id, enabled) => ipcRenderer.invoke('bilihub:plugins:set-enabled', id, enabled),
   revealPluginFolder: () => ipcRenderer.invoke('bilihub:plugins:reveal'),
+  biliApi: (url) => ipcRenderer.invoke('bilihub:bili:api', url),
+  biliText: (url) => ipcRenderer.invoke('bilihub:bili:text', url),
   openBilibili: () => ipcRenderer.invoke('bilihub:window:open-bilibili'),
   closePanel: () => ipcRenderer.invoke('bilihub:ui:close'),
 })

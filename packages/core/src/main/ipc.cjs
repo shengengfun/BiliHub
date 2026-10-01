@@ -1,7 +1,19 @@
-const { ipcMain, dialog, session } = require('electron')
+const { ipcMain, dialog, session, shell } = require('electron')
 const fs = require('node:fs')
+const path = require('node:path')
 
-function setupIpc({ getWindow, storage }) {
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+const API_HOSTS = ['api.bilibili.com', 'api.live.bilibili.com', 'api.biliapi.net']
+
+async function sessionFetch(url, responseType) {
+  const target = new URL(url)
+  if (!API_HOSTS.includes(target.hostname)) throw new Error(`Domain not allowed: ${target.hostname}`)
+  const ses = session.fromPartition('persist:bilihub')
+  const response = await ses.fetch(url, { headers: { 'User-Agent': UA, Referer: 'https://www.bilibili.com/', Origin: 'https://www.bilibili.com' } })
+  return response
+}
+
+function setupIpc({ getWindow, getUiWindow, storage }) {
   ipcMain.handle('bilihub:storage:get', (_event, key) => storage.get(key))
   ipcMain.handle('bilihub:storage:set', (_event, key, value) => storage.set(key, value))
   ipcMain.handle('bilihub:storage:delete', (_event, key) => storage.delete(key))
@@ -28,6 +40,18 @@ function setupIpc({ getWindow, storage }) {
     fs.writeFileSync(result.filePath, Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64'))
     return true
   })
+  ipcMain.handle('bilihub:bili:api', async (_event, url) => {
+    const response = await sessionFetch(url)
+    const text = await response.text()
+    try { return { status: response.status, data: JSON.parse(text) } } catch { return { status: response.status, data: null } }
+  })
+  ipcMain.handle('bilihub:bili:text', async (_event, url) => {
+    const response = await sessionFetch(url)
+    return response.text()
+  })
+  ipcMain.handle('bilihub:ui:open', (_event, route) => getUiWindow()?.show(route))
+  ipcMain.handle('bilihub:ui:close', () => getUiWindow()?.hide())
+  ipcMain.handle('bilihub:plugins:reveal', () => { const dir = pluginsDir(); fs.mkdirSync(dir, { recursive: true }); shell.openPath(dir) })
   ipcMain.handle('bilihub:download', async (_event, { url, filename }) => {
     if (!url) return { queued: true, filename }
     const ses = session.fromPartition('persist:bilihub')
@@ -35,4 +59,9 @@ function setupIpc({ getWindow, storage }) {
   })
 }
 
-module.exports = { setupIpc }
+function pluginsDir() {
+  const { app } = require('electron')
+  return path.join(app.getPath('userData'), 'plugins')
+}
+
+module.exports = { setupIpc, pluginsDir }

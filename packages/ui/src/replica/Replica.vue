@@ -15,13 +15,18 @@ const tabs = [
   { id: 'mine', label: '我的', icon: 'tab-mine', view: MineView },
 ]
 const active = ref('home')
-const playing = ref(false)
+const currentBvid = ref('')
+
+function openPlayer(video) {
+  currentBvid.value = video?.bvid ?? ''
+  if (currentBvid.value) window.scrollTo(0, 0)
+}
 </script>
 
 <template>
-  <PlayerView v-if="playing" />
+  <PlayerView v-if="currentBvid" :bvid="currentBvid" @close="currentBvid = ''" @play="openPlayer" />
   <div v-else class="rp">
-    <component :is="tabs.find((tab) => tab.id === active)?.view" />
+    <component :is="tabs.find((tab) => tab.id === active)?.view" @play="openPlayer" />
     <nav class="rp-tabbar">
       <button
         v-for="tab in tabs"
@@ -34,7 +39,6 @@ const playing = ref(false)
       </button>
     </nav>
     <div class="rp-devbar">
-      <button @click="playing = true">播放页</button>
       <button @click="emit('open-panel')">功能面板</button>
     </div>
   </div>

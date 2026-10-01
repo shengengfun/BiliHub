@@ -24,6 +24,8 @@ export const api = {
   listPlugins: async () => (native ? native.listPlugins() : []),
   setPluginEnabled: async (id, enabled) => native?.setPluginEnabled(id, enabled),
   revealPluginFolder: async () => native?.revealPluginFolder(),
+  biliApi: async (url) => (native ? native.biliApi(url) : undefined),
+  biliText: async (url) => (native ? native.biliText(url) : undefined),
   openBilibili: async () => native?.openBilibili(),
   closePanel: async () => native?.closePanel(),
 }

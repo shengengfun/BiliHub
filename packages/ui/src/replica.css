@@ -186,6 +186,42 @@
   .rp-mine-left { width: 320px; }
 }
 
+.rp-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.rp-state { padding: 60px 20px; color: var(--rp-text-3); text-align: center; font-size: 13px; }
+.rp-state-error { color: #d9534f; }
+
+/* 真实播放器 */
+.rp-player-stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; background: #000; }
+.rp-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; outline: 0; }
+.rp-danmaku-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.rp-danmaku {
+  position: absolute;
+  left: 100%;
+  white-space: nowrap;
+  font-size: 22px;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, .85), 0 0 4px rgba(0, 0, 0, .6);
+  will-change: transform;
+  animation-name: rp-danmaku-move;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes rp-danmaku-move {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100vw - 100%)); }
+}
+.rp-player-placeholder { color: rgba(255, 255, 255, .62); font-size: 13px; text-align: center; padding: 20px; }
+.rp-player-placeholder.side { color: var(--rp-text-3); padding: 40px 22px; }
+.rp-player-close { margin-left: auto; color: var(--rp-text-3); font-size: 12px; }
+.rp-danmaku-toggle { cursor: pointer; color: var(--rp-text-3); }
+.rp-danmaku-toggle.on { color: var(--rp-pink); }
+.rp-desc { padding: 14px 22px 6px; color: var(--rp-text-2); font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.rp-player-up .av { overflow: hidden; background: var(--rp-group); }
+.rp-player-up .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rp-rec-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.rp-rec-item { cursor: pointer; }
+.rp-rec-item:hover h6 { color: var(--rp-pink); }
+
 /* 复刻界面 与 功能面板 的切换 */
 .rp-devbar {
   position: fixed;
