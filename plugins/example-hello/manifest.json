@@ -1,0 +1,10 @@
+{
+  "id": "com.bilihub.example.hello",
+  "name": "示例插件",
+  "version": "1.0.0",
+  "description": "演示 BiliHub 插件权限和生命周期",
+  "author": "BiliHub",
+  "apiVersion": 1,
+  "main": "main.js",
+  "permissions": ["storage", "ui.page", "notify"]
+}

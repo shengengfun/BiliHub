@@ -47,3 +47,16 @@ export interface PlatformCapabilities {
   drm: boolean
   touch: boolean
 }
+
+export type PluginPermission = 'storage' | 'ui.page' | 'media.video' | 'danmaku.read' | 'download' | 'notify' | 'clipboard'
+
+export interface PluginManifest {
+  id: string
+  name: string
+  version: string
+  description: string
+  author: string
+  apiVersion: number
+  main: string
+  permissions: PluginPermission[]
+}
